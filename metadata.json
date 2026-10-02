@@ -1,0 +1,6 @@
+{
+  "name": "AdsToto - Real-Time Digital Advertising & Bid Management",
+  "description": "Next-generation digital advertising platform for adstoto.com. Features transparent pay-to-rank bidding auctions, real-time ad performance analytics, automated outbid guardrails, and campaign optimization.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
