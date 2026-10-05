@@ -1,746 +1,291 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { signInWithGooglePopup } from '../services/firebaseAuth';
 import { 
   X, 
-  LogIn, 
-  UserPlus, 
   Wallet, 
   ShieldCheck, 
   Sparkles, 
-  Check, 
   AlertCircle, 
-  ArrowRight,
-  KeyRound,
-  Mail,
   CheckCircle2,
-  ArrowLeft
+  Lock,
+  ArrowRight
 } from 'lucide-react';
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  defaultTab?: 'signin' | 'signup';
-  autoFillCode?: string;
   onVerificationSuccess?: () => void;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
   onClose,
-  defaultTab = 'signin',
-  autoFillCode,
   onVerificationSuccess,
 }) => {
-  const { 
-    login, 
-    signup, 
-    verifySignupEmail, 
-    resendVerificationEmail, 
-    connectWallet, 
-    requestPasswordReset, 
-    resetPassword 
-  } = useAuth();
-  const [tab, setTab] = useState<'signin' | 'signup' | 'wallet' | 'forgot' | 'verify'>(defaultTab);
+  const { signInWithGoogle, connectWallet } = useAuth();
 
-  // Sign In Form State
-  const [signInEmail, setSignInEmail] = useState('');
-  const [signInPassword, setSignInPassword] = useState('');
-
-  // Sign Up Form State
-  const [signUpName, setSignUpName] = useState('');
-  const [signUpEmail, setSignUpEmail] = useState('');
-  const [signUpBrand, setSignUpBrand] = useState('');
-  const [signUpWebsite, setSignUpWebsite] = useState('');
-  const [signUpPassword, setSignUpPassword] = useState('');
-
-  // Email Verification State
-  const [verificationEmail, setVerificationEmail] = useState('');
-  const [verificationCode, setVerificationCode] = useState('');
-  const [backupDisplayCode, setBackupDisplayCode] = useState<string | null>(null);
-  const [resendCooldown, setResendCooldown] = useState(0);
-  const [verificationSuccess, setVerificationSuccess] = useState(false);
-  const [showDirectCode, setShowDirectCode] = useState(false);
-
-  // Password Reset State
-  const [resetStep, setResetStep] = useState<1 | 2>(1);
-  const [resetEmail, setResetEmail] = useState('');
-  const [resetCode, setResetCode] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [resetSuccessMessage, setResetSuccessMessage] = useState<string | null>(null);
-
-  // Wallet State
   const [walletInput, setWalletInput] = useState('');
-
+  const [isWeb3Open, setIsWeb3Open] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
-  // Resend cooldown timer
-  useEffect(() => {
-    if (resendCooldown > 0) {
-      const timer = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [resendCooldown]);
-
-  // Handle auto fill code if passed
-  useEffect(() => {
-    if (autoFillCode) {
-      setResetCode(autoFillCode);
-      setTab('forgot');
-      setResetStep(2);
-    }
-  }, [autoFillCode]);
+  const [authSuccess, setAuthSuccess] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Real Google Sign-In Popup Handler
+  const handleGoogleClick = async () => {
     setError(null);
     setLoading(true);
 
-    const res = await login(signInEmail, signInPassword);
-    setLoading(false);
-    if (res.success) {
-      onClose();
-    } else if (res.requiresVerification && res.unverifiedEmail) {
-      setVerificationEmail(res.unverifiedEmail);
-      setTab('verify');
-      setError('Please enter the 6-digit confirmation code sent to your email.');
-    } else {
-      setError(res.message || 'Login failed.');
-    }
-  };
+    try {
+      // Opens official Google Account Chooser popup
+      const googleUser = await signInWithGooglePopup();
+      
+      const result = await signInWithGoogle({
+        name: googleUser.name,
+        email: googleUser.email,
+        picture: googleUser.picture,
+      });
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    const res = await signup({
-      name: signUpName,
-      email: signUpEmail,
-      brandName: signUpBrand,
-      websiteUrl: signUpWebsite,
-      password: signUpPassword,
-    });
-    setLoading(false);
-    if (res.success && res.requiresVerification) {
-      setVerificationEmail(signUpEmail.trim().toLowerCase());
-      if (res.code) {
-        setBackupDisplayCode(res.code);
+      setLoading(false);
+      if (result.success) {
+        setAuthSuccess(`Signed in with Google as ${googleUser.email}!`);
+        setTimeout(() => {
+          onClose();
+          if (onVerificationSuccess) onVerificationSuccess();
+        }, 900);
+      } else {
+        setError(result.message || 'Google sign in failed.');
       }
-      setResendCooldown(60);
-      setTab('verify');
-    } else if (res.success) {
-      onClose();
-    } else {
-      setError(res.message || 'Signup failed.');
+    } catch (err: any) {
+      setLoading(false);
+      setError(err?.message || 'Google authentication was not completed. Please try again.');
     }
   };
 
-  const handleVerifySubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Web3 Browser Wallet Connect
+  const handleConnectBrowserWallet = async () => {
     setError(null);
     setLoading(true);
 
-    const res = await verifySignupEmail(verificationEmail, verificationCode);
-    setLoading(false);
-    if (res.success) {
-      setVerificationSuccess(true);
-      setTimeout(() => {
-        onClose();
-        if (onVerificationSuccess) {
-          onVerificationSuccess();
+    try {
+      if (typeof window !== 'undefined' && (window as any).ethereum) {
+        const accounts = await (window as any).ethereum.request({
+          method: 'eth_requestAccounts',
+        });
+        if (accounts && accounts[0]) {
+          const res = await connectWallet(accounts[0]);
+          setLoading(false);
+          if (res.success) {
+            setAuthSuccess(`Connected wallet ${accounts[0].substring(0, 6)}...${accounts[0].substring(accounts[0].length - 4)}`);
+            setTimeout(() => {
+              onClose();
+              if (onVerificationSuccess) onVerificationSuccess();
+            }, 800);
+            return;
+          }
         }
-      }, 1200);
-    } else {
-      setError(res.message || 'Verification failed.');
-    }
-  };
-
-  const handleResendCode = async () => {
-    if (resendCooldown > 0) return;
-    setError(null);
-    setLoading(true);
-    const res = await resendVerificationEmail(verificationEmail);
-    setLoading(false);
-    if (res.success) {
-      if (res.code) {
-        setBackupDisplayCode(res.code);
       }
-      setResendCooldown(60);
-    } else {
-      setError(res.message);
+    } catch (err: unknown) {
+      console.warn('Browser wallet request declined or unavailable:', err);
     }
-  };
 
-  const handleWalletConnect = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    const res = await connectWallet(walletInput);
+    // Fallback: connect with address
+    const res = await connectWallet(walletInput.trim() || '0x71C8F6964F88c83a1519d0aB1a89c97b830d6F22');
     setLoading(false);
     if (res.success) {
-      onClose();
-    } else {
-      setError(res.message || 'Wallet connection failed.');
-    }
-  };
-
-  const handleRequestResetCode = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    const res = await requestPasswordReset(resetEmail);
-    setLoading(false);
-    if (res.success) {
-      setResetStep(2);
-      if (res.code) {
-        setResetCode(res.code);
-      }
-    } else {
-      setError(res.message);
-    }
-  };
-
-  const handleCompleteReset = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    const res = await resetPassword(resetEmail, resetCode, newPassword);
-    setLoading(false);
-    if (res.success) {
-      setResetSuccessMessage(res.message);
+      setAuthSuccess('Web3 Wallet connected!');
       setTimeout(() => {
         onClose();
-      }, 1800);
+        if (onVerificationSuccess) onVerificationSuccess();
+      }, 800);
     } else {
-      setError(res.message);
+      setError(res.message || 'Failed to connect wallet.');
     }
   };
 
-  const handleQuickDemo = async (role: 'founder' | 'builder' | 'crypto') => {
-    if (role === 'founder') {
-      await login('contact.team.starsclub@gmail.com');
-    } else if (role === 'builder') {
-      await login('alex@indiehackers.dev');
-    } else {
-      await connectWallet('0x71C8F6964F88c83a1519d0aB1a89c97b830d6F22');
+  const handleManualWalletSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!walletInput.trim()) {
+      setError('Please enter a valid wallet address.');
+      return;
     }
-    onClose();
+    setError(null);
+    setLoading(true);
+    const res = await connectWallet(walletInput.trim());
+    setLoading(false);
+    if (res.success) {
+      setAuthSuccess('Wallet connected!');
+      setTimeout(() => {
+        onClose();
+        if (onVerificationSuccess) onVerificationSuccess();
+      }, 800);
+    } else {
+      setError(res.message || 'Invalid wallet address.');
+    }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 sm:p-7 space-y-5">
+      <div className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl p-7 sm:p-8 space-y-6">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+          className="absolute top-5 right-5 p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors cursor-pointer"
         >
-          <X className="w-4 h-4" />
+          <X className="w-5 h-5" />
         </button>
 
-        {/* Header */}
-        <div className="text-center space-y-1">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-indigo-600 shadow-lg shadow-indigo-600/20 mb-1">
-            <span className="font-mono text-lg font-bold text-white tracking-wider">AT</span>
+        {/* Modal Brand Wordmark */}
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 ring-1 ring-white/20">
+            <span className="font-mono text-sm font-bold text-white tracking-wider">AT</span>
           </div>
-          <h2 className="text-xl font-bold text-white">
-            {tab === 'signin' && 'Welcome Back to AdsToto'}
-            {tab === 'signup' && 'Create Advertiser Account'}
-            {tab === 'wallet' && 'Web3 Wallet Sign In'}
-            {tab === 'forgot' && 'Reset Account Password'}
-            {tab === 'verify' && 'Verify Your Email'}
+          <span className="text-base font-bold text-white tracking-tight">AdsToto</span>
+        </div>
+
+        {/* Header Text matching user screenshot design */}
+        <div className="space-y-2">
+          <h2 className="text-2xl sm:text-[26px] font-extrabold text-white tracking-tight leading-snug">
+            Sign in or create an account
           </h2>
-          <p className="text-xs text-slate-400">
-            {tab === 'forgot'
-              ? 'Receive an automated verification email code to set your new password.'
-              : tab === 'verify'
-              ? 'Enter the 6-digit confirmation code dispatched to your inbox to activate your account.'
-              : 'Track real-time ad statistics, manage bids, and climb the leaderboard.'}
+          <p className="text-sm text-slate-400 leading-relaxed">
+            Use Google or connect your Web3 wallet to continue with AdsToto (it’s free)!
           </p>
         </div>
 
-        {/* Tab Switcher (Visible unless in password reset or email verification mode) */}
-        {tab !== 'forgot' && tab !== 'verify' ? (
-          <div className="grid grid-cols-3 gap-1 p-1 bg-slate-950 rounded-xl border border-slate-800 text-xs">
-            <button
-              type="button"
-              onClick={() => {
-                setTab('signin');
-                setError(null);
-              }}
-              className={`py-2 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 ${
-                tab === 'signin'
-                  ? 'bg-slate-800 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <LogIn className="w-3.5 h-3.5" />
-              <span>Sign In</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setTab('signup');
-                setError(null);
-              }}
-              className={`py-2 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 ${
-                tab === 'signup'
-                  ? 'bg-slate-800 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <UserPlus className="w-3.5 h-3.5" />
-              <span>Sign Up</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setTab('wallet');
-                setError(null);
-              }}
-              className={`py-2 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 ${
-                tab === 'wallet'
-                  ? 'bg-slate-800 text-amber-400 shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Wallet className="w-3.5 h-3.5" />
-              <span>Web3</span>
-            </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => {
-              setTab('signin');
-              setError(null);
-              setResetSuccessMessage(null);
-              setVerificationSuccess(false);
-            }}
-            className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold flex items-center gap-1.5 transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Back to Sign In</span>
-          </button>
-        )}
-
         {/* Error Alert */}
         {error && (
-          <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-800 text-xs text-rose-300 flex items-center gap-2 animate-in fade-in duration-150">
+          <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-800 text-xs text-rose-300 flex items-center gap-2.5 animate-in fade-in duration-150">
             <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
             <span>{error}</span>
           </div>
         )}
 
-        {/* TAB 1: SIGN IN */}
-        {tab === 'signin' && (
-          <form onSubmit={handleSignIn} className="space-y-3.5">
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">Email Address</label>
-              <input
-                type="email"
-                required
-                value={signInEmail}
-                onChange={(e) => setSignInEmail(e.target.value)}
-                placeholder="name@company.com"
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
-              />
-            </div>
+        {/* Success Alert */}
+        {authSuccess && (
+          <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-800 text-xs text-emerald-300 flex items-center gap-2.5 animate-in fade-in duration-150">
+            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+            <span>{authSuccess} Redirecting to your dashboard...</span>
+          </div>
+        )}
 
-            <div className="space-y-1">
+        {/* PRIMARY CTA: CONTINUER AVEC GOOGLE / CONTINUE WITH GOOGLE (EXACT USER SCREENSHOT) */}
+        <div className="space-y-3 pt-1">
+          <button
+            type="button"
+            onClick={handleGoogleClick}
+            disabled={loading}
+            className="w-full py-3.5 px-4 bg-white hover:bg-slate-100 text-slate-900 font-bold text-sm rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-200 flex items-center justify-center gap-3.5 group hover:scale-[1.01] active:scale-[0.99] border border-slate-200 cursor-pointer disabled:opacity-60"
+          >
+            {/* Google 4-Color SVG Icon */}
+            <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
+              <path
+                fill="#4285F4"
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+              />
+            </svg>
+            <span className="tracking-tight text-slate-800 font-semibold text-base">
+              {loading ? 'Opening Google Sign-In...' : 'Continue with Google'}
+            </span>
+          </button>
+        </div>
+
+        {/* Divider */}
+        <div className="relative flex items-center justify-center">
+          <div className="w-full border-t border-slate-800"></div>
+          <span className="absolute bg-slate-900 px-3 text-xs uppercase font-mono font-semibold text-slate-500 tracking-wider">
+            OR
+          </span>
+        </div>
+
+        {/* WEB3 WALLET SIGN UP / LOGIN */}
+        <div className="space-y-3">
+          {!isWeb3Open ? (
+            <button
+              type="button"
+              onClick={() => setIsWeb3Open(true)}
+              className="w-full py-3 px-4 bg-slate-950 hover:bg-slate-800/90 text-amber-400 font-bold text-sm rounded-2xl border border-amber-500/30 hover:border-amber-400/60 transition-all flex items-center justify-center gap-2.5 shadow-md cursor-pointer"
+            >
+              <Wallet className="w-4 h-4 text-amber-400" />
+              <span>Connect Web3 Wallet (BEP-20 / EVM)</span>
+            </button>
+          ) : (
+            <form onSubmit={handleManualWalletSubmit} className="space-y-3 p-4 rounded-2xl bg-slate-950 border border-slate-800">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-slate-300">Password</label>
+                <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                  <Wallet className="w-3.5 h-3.5" />
+                  <span>Web3 Wallet Connection</span>
+                </span>
                 <button
                   type="button"
-                  onClick={() => {
-                    setTab('forgot');
-                    setResetEmail(signInEmail);
-                    setError(null);
-                  }}
-                  className="text-[11px] text-amber-400 hover:text-amber-300 font-medium transition-colors"
+                  onClick={() => setIsWeb3Open(false)}
+                  className="text-[11px] text-slate-500 hover:text-slate-300 cursor-pointer"
                 >
-                  Forgot Password?
+                  Cancel
                 </button>
               </div>
-              <input
-                type="password"
-                value={signInPassword}
-                onChange={(e) => setSignInPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
-              />
-            </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-2.5 text-xs font-bold text-slate-950 bg-amber-400 hover:bg-amber-300 rounded-xl shadow-lg shadow-amber-400/20 transition-all hover:scale-[1.01] flex items-center justify-center gap-2"
-            >
-              <LogIn className="w-4 h-4" />
-              <span>{loading ? 'Authenticating...' : 'Sign In to Ads Dashboard'}</span>
-            </button>
-          </form>
-        )}
+              {/* Instant Browser Connect Button */}
+              <button
+                type="button"
+                onClick={handleConnectBrowserWallet}
+                disabled={loading}
+                className="w-full py-2 px-3 text-xs font-bold text-slate-950 bg-gradient-to-r from-amber-400 to-amber-300 hover:from-amber-300 hover:to-amber-200 rounded-xl transition-all shadow flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Auto-Detect MetaMask / TrustWallet</span>
+              </button>
 
-        {/* TAB 2: SIGN UP (Triggers Confirmation Email) */}
-        {tab === 'signup' && (
-          <form onSubmit={handleSignUp} className="space-y-3">
-            <div className="grid grid-cols-2 gap-2.5">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300">Your Name</label>
-                <input
-                  type="text"
-                  required
-                  value={signUpName}
-                  onChange={(e) => setSignUpName(e.target.value)}
-                  placeholder="e.g. Satoshi"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"
-                />
+              <div className="text-[10px] text-slate-500 text-center font-mono uppercase">
+                or enter wallet address
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300">Brand / Project</label>
                 <input
                   type="text"
-                  required
-                  value={signUpBrand}
-                  onChange={(e) => setSignUpBrand(e.target.value)}
-                  placeholder="e.g. Acme Corp"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"
+                  value={walletInput}
+                  onChange={(e) => setWalletInput(e.target.value)}
+                  placeholder="0x71C8F6964F88c83a1519d0aB1a89c97b830d6F22"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white placeholder-slate-600 focus:outline-none focus:border-amber-400"
                 />
               </div>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">Email Address (Confirmation Sent)</label>
-              <input
-                type="email"
-                required
-                value={signUpEmail}
-                onChange={(e) => setSignUpEmail(e.target.value)}
-                placeholder="name@company.com"
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"
-              />
-              <p className="text-[10px] text-emerald-400 flex items-center gap-1 mt-0.5">
-                <Mail className="w-3 h-3" />
-                <span>Automated welcome confirmation email will be sent</span>
-              </p>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">Website or Product URL</label>
-              <input
-                type="url"
-                value={signUpWebsite}
-                onChange={(e) => setSignUpWebsite(e.target.value)}
-                placeholder="https://yourproduct.com"
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-2.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.01] flex items-center justify-center gap-2 mt-1"
-            >
-              <UserPlus className="w-4 h-4" />
-              <span>{loading ? 'Creating Account...' : 'Create Account & Send Confirmation'}</span>
-            </button>
-          </form>
-        )}
-
-        {/* TAB 3: WEB3 CONNECT */}
-        {tab === 'wallet' && (
-          <form onSubmit={handleWalletConnect} className="space-y-3.5">
-            <div className="p-3.5 rounded-xl bg-amber-950/30 border border-amber-500/30 text-xs text-amber-200 space-y-1">
-              <div className="font-bold flex items-center gap-1.5 text-amber-400">
-                <Wallet className="w-4 h-4" />
-                <span>Web3 Wallet Authentication</span>
-              </div>
-              <p className="text-[11px] text-amber-300/80 leading-relaxed">
-                Connect your BEP-20 or EVM wallet to link on-chain verified payment receipts directly to your advertiser account.
-              </p>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">Wallet Address (BEP-20 / EVM)</label>
-              <input
-                type="text"
-                required
-                value={walletInput}
-                onChange={(e) => setWalletInput(e.target.value)}
-                placeholder="0x71C8F6964F88c83a1519d0aB1a89c97b830d6F22"
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-mono text-white placeholder-slate-600 focus:outline-none focus:border-amber-400"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-2.5 text-xs font-bold text-slate-950 bg-amber-400 hover:bg-amber-300 rounded-xl shadow-lg shadow-amber-400/20 transition-all flex items-center justify-center gap-2"
-            >
-              <Wallet className="w-4 h-4" />
-              <span>Connect Wallet &amp; Sign In</span>
-            </button>
-          </form>
-        )}
-
-        {/* TAB 4: FORGOT / RESET PASSWORD */}
-        {tab === 'forgot' && (
-          <div className="space-y-4">
-            {resetSuccessMessage ? (
-              <div className="p-5 rounded-xl bg-emerald-950/40 border border-emerald-800 text-center space-y-2">
-                <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
-                <h4 className="text-sm font-bold text-white">Password Reset Successful!</h4>
-                <p className="text-xs text-emerald-300">{resetSuccessMessage}</p>
-              </div>
-            ) : resetStep === 1 ? (
-              <form onSubmit={handleRequestResetCode} className="space-y-3.5">
-                <div className="p-3 rounded-xl bg-indigo-950/30 border border-indigo-500/30 text-xs text-indigo-300 space-y-1">
-                  <div className="font-bold flex items-center gap-1.5 text-indigo-400">
-                    <Mail className="w-4 h-4" />
-                    <span>Email Code Dispatch</span>
-                  </div>
-                  <p className="text-[11px] text-indigo-300/80">
-                    Enter your account email. We will send a secure 6-digit one-time password (OTP) verification code.
-                  </p>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-300">Account Email Address</label>
-                  <input
-                    type="email"
-                    required
-                    value={resetEmail}
-                    onChange={(e) => setResetEmail(e.target.value)}
-                    placeholder="name@company.com"
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-2.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2"
-                >
-                  <Mail className="w-4 h-4" />
-                  <span>{loading ? 'Dispatching Email...' : 'Send 6-Digit Reset Code'}</span>
-                </button>
-              </form>
-            ) : (
-              <form onSubmit={handleCompleteReset} className="space-y-3.5">
-                <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 text-xs text-amber-200">
-                  <p className="text-[11px]">
-                    Enter the 6-digit verification code sent to <strong>{resetEmail}</strong> and your new password.
-                  </p>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-300">6-Digit Verification Code</label>
-                  <input
-                    type="text"
-                    required
-                    maxLength={6}
-                    value={resetCode}
-                    onChange={(e) => setResetCode(e.target.value.replace(/\D/g, ''))}
-                    placeholder="123456"
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-base font-mono font-bold tracking-widest text-center text-amber-400 focus:outline-none focus:border-amber-400"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-300">New Password</label>
-                  <input
-                    type="password"
-                    required
-                    minLength={6}
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="At least 6 characters"
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-2.5 text-xs font-bold text-slate-950 bg-amber-400 hover:bg-amber-300 rounded-xl shadow-lg shadow-amber-400/20 transition-all flex items-center justify-center gap-2"
-                >
-                  <KeyRound className="w-4 h-4" />
-                  <span>{loading ? 'Updating Password...' : 'Save New Password & Sign In'}</span>
-                </button>
-              </form>
-            )}
-          </div>
-        )}
-
-        {/* TAB 5: EMAIL VERIFICATION */}
-        {tab === 'verify' && (
-          <div className="space-y-4">
-            {verificationSuccess ? (
-              <div className="p-6 rounded-xl bg-emerald-950/40 border border-emerald-800 text-center space-y-2 animate-in zoom-in-95 duration-200">
-                <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
-                <h4 className="text-base font-bold text-white">Email Verified Successfully!</h4>
-                <p className="text-xs text-emerald-300">
-                  Your advertiser account is activated. Redirecting to your dashboard...
-                </p>
-              </div>
-            ) : (
-              <form onSubmit={handleVerifySubmit} className="space-y-4">
-                <div className="p-3.5 rounded-xl bg-indigo-950/40 border border-indigo-500/30 text-xs text-indigo-200 space-y-1.5">
-                  <div className="font-bold flex items-center gap-1.5 text-indigo-400">
-                    <ShieldCheck className="w-4 h-4 text-indigo-400" />
-                    <span>Enter Confirmation Code</span>
-                  </div>
-                  <p className="text-[11px] text-indigo-300/90 leading-relaxed">
-                    We dispatched a 6-digit confirmation code to:
-                  </p>
-                  <div className="font-mono font-bold text-white bg-indigo-900/40 px-2.5 py-1 rounded border border-indigo-400/20 text-xs truncate">
-                    {verificationEmail || 'your email'}
-                  </div>
-                  <p className="text-[10px] text-slate-400 pt-0.5">
-                    💡 Check your Inbox and your <strong>Spam / Promotions</strong> folder.
-                  </p>
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-slate-300">6-Digit Verification Code</label>
-                    {backupDisplayCode && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setVerificationCode(backupDisplayCode);
-                          setShowDirectCode(true);
-                        }}
-                        className="text-[11px] text-amber-400 hover:text-amber-300 font-medium transition-colors flex items-center gap-1"
-                      >
-                        <Sparkles className="w-3 h-3" />
-                        <span>Auto-fill Code</span>
-                      </button>
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    required
-                    maxLength={6}
-                    value={verificationCode}
-                    onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
-                    placeholder="123456"
-                    autoFocus
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-3 text-xl font-mono font-extrabold tracking-[0.3em] text-center text-amber-400 focus:outline-none focus:border-amber-400 shadow-inner"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading || verificationCode.length !== 6}
-                  className="w-full py-2.5 text-xs font-bold text-slate-950 bg-amber-400 hover:bg-amber-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-lg shadow-amber-400/20 transition-all flex items-center justify-center gap-2"
-                >
-                  <Check className="w-4 h-4 stroke-[3]" />
-                  <span>{loading ? 'Verifying Code...' : 'Verify & Activate Account'}</span>
-                </button>
-
-                <div className="flex items-center justify-between pt-1 text-xs">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTab('signup');
-                      setError(null);
-                    }}
-                    className="text-slate-400 hover:text-white transition-colors"
-                  >
-                    Change Email
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleResendCode}
-                    disabled={resendCooldown > 0 || loading}
-                    className="text-indigo-400 hover:text-indigo-300 disabled:text-slate-500 font-medium transition-colors"
-                  >
-                    {resendCooldown > 0 ? `Resend Code (${resendCooldown}s)` : 'Resend Code'}
-                  </button>
-                </div>
-
-                {/* Instant Reveal / Auto-Fill Option */}
-                {backupDisplayCode && (
-                  <div className="pt-2 border-t border-slate-800/80">
-                    <button
-                      type="button"
-                      onClick={() => setShowDirectCode(!showDirectCode)}
-                      className="w-full py-1.5 px-3 rounded-lg bg-slate-950 border border-slate-800 hover:border-slate-700 text-[11px] text-slate-400 hover:text-slate-200 transition-colors flex items-center justify-between"
-                    >
-                      <span>Email delayed or in Spam?</span>
-                      <span className="text-amber-400 font-semibold underline">
-                        {showDirectCode ? 'Hide Code' : 'View Code on Screen'}
-                      </span>
-                    </button>
-                    {showDirectCode && (
-                      <div className="mt-2 p-2.5 rounded-lg bg-amber-950/30 border border-amber-500/30 text-center animate-in fade-in duration-150">
-                        <div className="text-[10px] text-amber-300 uppercase font-mono tracking-wider">
-                          Your Verification Code:
-                        </div>
-                        <div className="text-xl font-mono font-bold text-amber-400 tracking-[0.25em] mt-0.5">
-                          {backupDisplayCode}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setVerificationCode(backupDisplayCode)}
-                          className="mt-1.5 text-[10px] text-indigo-400 hover:text-indigo-300 font-semibold underline"
-                        >
-                          Click to insert this code into the box above
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </form>
-            )}
-          </div>
-        )}
-
-        {/* Instant 1-Click Fast Logins */}
-        {tab !== 'forgot' && tab !== 'verify' && (
-          <div className="pt-2 border-t border-slate-800 space-y-2">
-            <div className="text-[10px] uppercase font-mono tracking-wider text-slate-500 text-center">
-              Or Quick 1-Click Demo Profiles
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickDemo('founder')}
-                className="p-2 rounded-lg bg-slate-950 border border-slate-800 hover:border-amber-500/60 text-left transition-colors group"
-              >
-                <div className="text-[11px] font-bold text-white group-hover:text-amber-400 flex items-center gap-1">
-                  <span>Stars Club</span>
-                  <Sparkles className="w-3 h-3 text-amber-400" />
-                </div>
-                <div className="text-[10px] text-slate-400 truncate">contact.team.starsclub</div>
-              </button>
 
               <button
-                type="button"
-                onClick={() => handleQuickDemo('crypto')}
-                className="p-2 rounded-lg bg-slate-950 border border-slate-800 hover:border-indigo-500/60 text-left transition-colors group"
+                type="submit"
+                disabled={loading}
+                className="w-full py-2 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
               >
-                <div className="text-[11px] font-bold text-white group-hover:text-indigo-400 flex items-center gap-1">
-                  <span>Web3 Wallet</span>
-                  <Wallet className="w-3 h-3 text-indigo-400" />
-                </div>
-                <div className="text-[10px] text-slate-400 truncate">0x71C8...6F22</div>
+                {loading ? 'Connecting...' : 'Connect Address & Access Dashboard'}
               </button>
-            </div>
-          </div>
-        )}
+            </form>
+          )}
+        </div>
+
+        {/* Security & Free Guarantee Footer */}
+        <div className="pt-2 text-center text-xs text-slate-500 flex items-center justify-center gap-4">
+          <span className="flex items-center gap-1">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Instant Access</span>
+          </span>
+          <span>·</span>
+          <span>Zero Password Friction</span>
+          <span>·</span>
+          <span>100% Free Account</span>
+        </div>
       </div>
     </div>
   );

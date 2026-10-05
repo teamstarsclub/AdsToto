@@ -1,12 +1,7 @@
 import React, { useState } from 'react';
 import { useAds } from '../context/AdContext';
 import { getRedeemedTxHashes } from '../utils/cryptoVerification';
-import { 
-  getEmailProviderConfig, 
-  saveEmailProviderConfig, 
-  sendTestEmailToAdmin, 
-  EmailProviderConfig 
-} from '../services/emailService';
+import { getGoogleClientId, saveGoogleClientId } from '../services/googleAuthService';
 import { 
   X, 
   Wallet, 
@@ -20,11 +15,11 @@ import {
   EyeOff,
   Flame,
   ShieldAlert,
-  Mail,
-  Send,
   Sparkles,
   ExternalLink,
-  Check
+  Check,
+  Globe,
+  KeyRound
 } from 'lucide-react';
 
 interface PayoutSettingsModalProps {
@@ -46,7 +41,7 @@ export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({ onClos
   const [pinError, setPinError] = useState<string | null>(null);
 
   // Vault Tab State
-  const [adminTab, setAdminTab] = useState<'wallets' | 'email'>('wallets');
+  const [adminTab, setAdminTab] = useState<'wallets' | 'google'>('wallets');
 
   // Form states for Wallets
   const [bscAddress, setBscAddress] = useState(payoutSettings.bscAddress || payoutSettings.polygonAddress || '');
@@ -58,12 +53,9 @@ export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({ onClos
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Email Config State
-  const [emailConfig, setEmailConfig] = useState<EmailProviderConfig>(() => getEmailProviderConfig());
-  const [testEmailAddress, setTestEmailAddress] = useState('contact.team.starsclub@gmail.com');
-  const [testStatus, setTestStatus] = useState<string | null>(null);
-  const [testLoading, setTestLoading] = useState(false);
-  const [emailSavedSuccess, setEmailSavedSuccess] = useState(false);
+  // Google OAuth Config State
+  const [googleClientId, setGoogleClientIdState] = useState(() => getGoogleClientId());
+  const [googleSavedSuccess, setGoogleSavedSuccess] = useState(false);
 
   const redeemedCount = getRedeemedTxHashes().length;
 
@@ -111,22 +103,11 @@ export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({ onClos
     }, 1500);
   };
 
-  const handleSaveEmailConfig = (e: React.FormEvent) => {
+  const handleSaveGoogleConfig = (e: React.FormEvent) => {
     e.preventDefault();
-    saveEmailProviderConfig(emailConfig);
-    setEmailSavedSuccess(true);
-    setTimeout(() => setEmailSavedSuccess(false), 2000);
-  };
-
-  const handleSendTestEmail = async () => {
-    if (!testEmailAddress.trim()) return;
-    setTestLoading(true);
-    setTestStatus(null);
-    saveEmailProviderConfig(emailConfig);
-
-    const result = await sendTestEmailToAdmin(testEmailAddress.trim());
-    setTestLoading(false);
-    setTestStatus(result.message);
+    saveGoogleClientId(googleClientId.trim());
+    setGoogleSavedSuccess(true);
+    setTimeout(() => setGoogleSavedSuccess(false), 2000);
   };
 
   return (
@@ -144,13 +125,13 @@ export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({ onClos
         <div>
           <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-400 uppercase tracking-wider">
             <Lock className="w-3.5 h-3.5" />
-            <span>Internal Security &amp; SaaS Infrastructure Vault</span>
+            <span>Internal Security &amp; Admin Command Vault</span>
           </div>
           <h2 className="text-xl font-bold text-white mt-1">
-            Admin Command Center
+            Admin Vault
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Internal merchant treasury &amp; transactional email pipeline settings.
+            Internal merchant treasury &amp; Google OAuth 2.0 configuration.
           </p>
         </div>
 
@@ -164,7 +145,7 @@ export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({ onClos
               <div>
                 <h3 className="text-sm font-bold text-white">Administrator Access Required</h3>
                 <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
-                  Enter your master security PIN to access the treasury &amp; SaaS delivery configuration.
+                  Enter your master security PIN to access the treasury &amp; OAuth settings.
                 </p>
               </div>
 
@@ -220,15 +201,15 @@ export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({ onClos
 
               <button
                 type="button"
-                onClick={() => setAdminTab('email')}
+                onClick={() => setAdminTab('google')}
                 className={`py-2 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 ${
-                  adminTab === 'email'
+                  adminTab === 'google'
                     ? 'bg-slate-800 text-indigo-400 shadow-sm'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                <Mail className="w-3.5 h-3.5" />
-                <span>Real Email Pipeline (SaaS)</span>
+                <KeyRound className="w-3.5 h-3.5" />
+                <span>Google OAuth 2.0</span>
               </button>
             </div>
 
@@ -336,127 +317,64 @@ export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({ onClos
               </form>
             )}
 
-            {/* TAB 2: REAL SAAS EMAIL PIPELINE */}
-            {adminTab === 'email' && (
-              <form onSubmit={handleSaveEmailConfig} className="space-y-4">
+            {/* TAB 2: GOOGLE OAUTH CONFIGURATION */}
+            {adminTab === 'google' && (
+              <form onSubmit={handleSaveGoogleConfig} className="space-y-4">
                 <div className="p-3.5 rounded-xl bg-indigo-950/40 border border-indigo-500/30 space-y-1.5">
                   <div className="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-                    <span>Production SaaS Email Dispatcher</span>
+                    <span>Google Identity Services (GIS) Web Client</span>
                   </div>
                   <p className="text-[11px] text-indigo-200/80 leading-relaxed">
-                    Connect Brevo, Resend, or EmailJS to send real transactional verification codes directly to advertisers' Gmail and corporate inboxes worldwide.
+                    Configure your Google OAuth 2.0 Web Client ID to power the authentic Google Account Chooser popup on <strong>adstoto.com</strong>.
                   </p>
                 </div>
 
-                {emailSavedSuccess && (
+                {googleSavedSuccess && (
                   <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-800 text-xs text-emerald-300 flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <span>Email provider settings saved!</span>
+                    <span>Google Client ID saved successfully!</span>
                   </div>
                 )}
 
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
-                    <span>Brevo (Sendinblue) API Key (Recommended - 300 free emails/day)</span>
-                    <a
-                      href="https://app.brevo.com/settings/keys/api"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[10px] text-indigo-400 hover:underline flex items-center gap-1"
-                    >
-                      <span>Get Free Key</span>
-                      <ExternalLink className="w-2.5 h-2.5" />
-                    </a>
-                  </label>
-                  <input
-                    type="password"
-                    value={emailConfig.brevoApiKey || ''}
-                    onChange={(e) => setEmailConfig({ ...emailConfig, brevoApiKey: e.target.value })}
-                    placeholder="xkeysib-..."
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs font-mono text-white focus:outline-none focus:border-indigo-400"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
-                    <span>Resend API Key (Optional)</span>
-                    <a
-                      href="https://resend.com/api-keys"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[10px] text-indigo-400 hover:underline flex items-center gap-1"
-                    >
-                      <span>Get Key</span>
-                      <ExternalLink className="w-2.5 h-2.5" />
-                    </a>
-                  </label>
-                  <input
-                    type="password"
-                    value={emailConfig.resendApiKey || ''}
-                    onChange={(e) => setEmailConfig({ ...emailConfig, resendApiKey: e.target.value })}
-                    placeholder="re_..."
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs font-mono text-white focus:outline-none focus:border-indigo-400"
-                  />
+                <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 space-y-1.5">
+                  <div className="font-bold text-white">How to get your Google Client ID:</div>
+                  <div>1. Open <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="text-indigo-400 underline inline-flex items-center gap-1">Google Cloud Credentials <ExternalLink className="w-3 h-3" /></a></div>
+                  <div>2. Click <strong>+ Create Credentials &rarr; OAuth client ID</strong></div>
+                  <div>3. Application type: <strong>Web application</strong></div>
+                  <div>4. Authorized JavaScript origins: <span className="font-mono text-amber-400">https://www.adstoto.com</span> and <span className="font-mono text-amber-400">https://adstoto.com</span></div>
+                  <div>5. Copy and paste the generated <strong>Client ID</strong> below:</div>
                 </div>
 
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-300">
-                    Sender Email Display
+                    OAuth 2.0 Web Client ID
                   </label>
                   <input
-                    type="email"
-                    value={emailConfig.senderEmail || ''}
-                    onChange={(e) => setEmailConfig({ ...emailConfig, senderEmail: e.target.value })}
-                    placeholder="security@adstoto.com"
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-indigo-400"
+                    type="text"
+                    required
+                    value={googleClientId}
+                    onChange={(e) => setGoogleClientIdState(e.target.value)}
+                    placeholder="1234567890-abcdef.apps.googleusercontent.com"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-indigo-400"
                   />
                 </div>
 
                 <div className="flex items-center justify-end gap-2 pt-1">
                   <button
+                    type="button"
+                    onClick={onClose}
+                    className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white"
+                  >
+                    Close
+                  </button>
+                  <button
                     type="submit"
                     className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md flex items-center gap-1.5"
                   >
                     <Save className="w-3.5 h-3.5" />
-                    <span>Save Email Provider</span>
+                    <span>Save Google Client ID</span>
                   </button>
-                </div>
-
-                {/* Real-time Email Delivery Test Tool */}
-                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2.5 mt-2">
-                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                    <Send className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Test Real Inbox Delivery</span>
-                  </div>
-                  <p className="text-[11px] text-slate-400">
-                    Send a test verification code to verify your outbound pipeline delivers to Gmail.
-                  </p>
-
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="email"
-                      value={testEmailAddress}
-                      onChange={(e) => setTestEmailAddress(e.target.value)}
-                      placeholder="contact.team.starsclub@gmail.com"
-                      className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleSendTestEmail}
-                      disabled={testLoading}
-                      className="px-3.5 py-2 text-xs font-bold text-slate-950 bg-amber-400 hover:bg-amber-300 disabled:opacity-50 rounded-xl transition-all flex items-center gap-1.5 shrink-0"
-                    >
-                      <Send className="w-3 h-3" />
-                      <span>{testLoading ? 'Sending...' : 'Send Test'}</span>
-                    </button>
-                  </div>
-
-                  {testStatus && (
-                    <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 mt-2">
-                      {testStatus}
-                    </div>
-                  )}
                 </div>
               </form>
             )}

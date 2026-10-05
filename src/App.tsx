@@ -13,7 +13,6 @@ import { PickAFightModal } from './components/PickAFightModal';
 import { CampaignModal } from './components/CampaignModal';
 import { AuthModal } from './components/AuthModal';
 import { UserAccountModal } from './components/UserAccountModal';
-import { EmailNotificationViewer } from './components/EmailNotificationViewer';
 import { PayoutSettingsModal } from './components/PayoutSettingsModal';
 import { CryptoPaymentModal } from './components/CryptoPaymentModal';
 import { AdCampaign } from './types/ad';
@@ -105,7 +104,6 @@ function MainApp() {
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [isPayoutModalOpen, setIsPayoutModalOpen] = useState(false);
   const [isTestPaymentModalOpen, setIsTestPaymentModalOpen] = useState(false);
-  const [autoFillResetCode, setAutoFillResetCode] = useState<string | undefined>(undefined);
 
   const topCampaign = campaigns[0];
 
@@ -253,25 +251,13 @@ function MainApp() {
         </div>
       </footer>
 
-      {/* Auth Modal (Sign In / Register / Web3 / Password Reset) */}
+      {/* Auth Modal (Google & Web3 Sign In) */}
       <AuthModal
         isOpen={isAuthModalOpen}
-        onClose={() => {
-          setIsAuthModalOpen(false);
-          setAutoFillResetCode(undefined);
-        }}
+        onClose={() => setIsAuthModalOpen(false)}
         onVerificationSuccess={() => {
           setIsAuthModalOpen(false);
           setActiveTab('my-campaigns');
-        }}
-        autoFillCode={autoFillResetCode}
-      />
-
-      {/* Real-Time Email Notification Dispatcher & Live Inbox Toast */}
-      <EmailNotificationViewer
-        onAutoFillCode={(code) => {
-          setAutoFillResetCode(code);
-          setIsAuthModalOpen(true);
         }}
       />
 

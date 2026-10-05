@@ -64,8 +64,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch {
       // Fallback
     }
-    // Default to demo advertiser for instant onboarding & preview
-    return DEFAULT_DEMO_USER;
+    return null;
   });
 
   // Save active user session
@@ -80,6 +79,54 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Ignore
     }
   }, [user]);
+
+  const signInWithGoogle = async (profile?: {
+    name?: string;
+    email?: string;
+    picture?: string;
+  }): Promise<{ success: boolean; message?: string }> => {
+    try {
+      const email = (profile?.email || 'contact.team.starsclub@gmail.com').trim().toLowerCase();
+      const name = profile?.name || 'Stars Club Advertiser';
+      const words = name.split(/\s+/);
+      const initials =
+        words.length >= 2
+          ? (words[0][0] + words[1][0]).toUpperCase()
+          : name.substring(0, 2).toUpperCase();
+
+      const googleUser: UserProfile = {
+        id: 'usr-g-' + Math.random().toString(36).substring(2, 9),
+        name: name,
+        email: email,
+        brandName: `${name.split(' ')[0]}'s Venture`,
+        websiteUrl: 'https://adstoto.com',
+        avatarBg: 'from-blue-600 via-indigo-600 to-purple-600',
+        avatarInitials: initials,
+        avatarUrl: profile?.picture,
+        createdAt: new Date().toISOString(),
+        tier: 'Growth Marketer',
+        isEmailVerified: true,
+        emailVerifiedAt: new Date().toISOString(),
+        authProvider: 'google',
+      };
+
+      // Save to registered accounts
+      const rawDb = localStorage.getItem(STORAGE_KEY_USERS_DB);
+      const db: StoredAccount[] = rawDb ? JSON.parse(rawDb) : [];
+      const existingIdx = db.findIndex((u) => u.email.toLowerCase() === email);
+      if (existingIdx !== -1) {
+        db[existingIdx] = { ...db[existingIdx], ...googleUser };
+      } else {
+        db.push(googleUser);
+      }
+      localStorage.setItem(STORAGE_KEY_USERS_DB, JSON.stringify(db));
+
+      setUser(googleUser);
+      return { success: true };
+    } catch {
+      return { success: false, message: 'Google sign-in failed. Please try again.' };
+    }
+  };
 
   const login = async (email: string, _password?: string): Promise<{ success: boolean; message?: string; requiresVerification?: boolean; unverifiedEmail?: string }> => {
     const cleanEmail = email.trim().toLowerCase();
@@ -477,6 +524,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       value={{
         user,
         isAuthenticated: !!user,
+        signInWithGoogle,
         login,
         signup,
         verifySignupEmail,

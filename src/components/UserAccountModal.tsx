@@ -88,6 +88,11 @@ export const UserAccountModal: React.FC<UserAccountModalProps> = ({
                 <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
                   {user.tier}
                 </span>
+                {user.authProvider === 'google' && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center gap-1">
+                    <span>Google Verified</span>
+                  </span>
+                )}
               </div>
               <div className="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
                 <span>{user.email}</span>
