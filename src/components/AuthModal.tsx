@@ -29,8 +29,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   defaultTab = 'signin',
   autoFillCode,
 }) => {
-  const { login, signup, connectWallet, requestPasswordReset, resetPassword } = useAuth();
-  const [tab, setTab] = useState<'signin' | 'signup' | 'wallet' | 'forgot'>(defaultTab);
+  const { 
+    login, 
+    signup, 
+    verifySignupEmail, 
+    resendVerificationEmail, 
+    connectWallet, 
+    requestPasswordReset, 
+    resetPassword 
+  } = useAuth();
+  const [tab, setTab] = useState<'signin' | 'signup' | 'wallet' | 'forgot' | 'verify'>(defaultTab);
 
   // Sign In Form State
   const [signInEmail, setSignInEmail] = useState('');
@@ -42,6 +50,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [signUpBrand, setSignUpBrand] = useState('');
   const [signUpWebsite, setSignUpWebsite] = useState('');
   const [signUpPassword, setSignUpPassword] = useState('');
+
+  // Email Verification State
+  const [verificationEmail, setVerificationEmail] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [backupDisplayCode, setBackupDisplayCode] = useState<string | null>(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [verificationSuccess, setVerificationSuccess] = useState(false);
+  const [showDirectCode, setShowDirectCode] = useState(false);
 
   // Password Reset State
   const [resetStep, setResetStep] = useState<1 | 2>(1);
@@ -55,6 +71,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Resend cooldown timer
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
 
   // Handle auto fill code if passed
   useEffect(() => {
@@ -76,6 +100,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setLoading(false);
     if (res.success) {
       onClose();
+    } else if (res.requiresVerification && res.unverifiedEmail) {
+      setVerificationEmail(res.unverifiedEmail);
+      setTab('verify');
+      setError('Please enter the 6-digit confirmation code sent to your email.');
     } else {
       setError(res.message || 'Login failed.');
     }
@@ -94,10 +122,50 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       password: signUpPassword,
     });
     setLoading(false);
-    if (res.success) {
+    if (res.success && res.requiresVerification) {
+      setVerificationEmail(signUpEmail.trim().toLowerCase());
+      if (res.code) {
+        setBackupDisplayCode(res.code);
+      }
+      setResendCooldown(60);
+      setTab('verify');
+    } else if (res.success) {
       onClose();
     } else {
       setError(res.message || 'Signup failed.');
+    }
+  };
+
+  const handleVerifySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    const res = await verifySignupEmail(verificationEmail, verificationCode);
+    setLoading(false);
+    if (res.success) {
+      setVerificationSuccess(true);
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+    } else {
+      setError(res.message || 'Verification failed.');
+    }
+  };
+
+  const handleResendCode = async () => {
+    if (resendCooldown > 0) return;
+    setError(null);
+    setLoading(true);
+    const res = await resendVerificationEmail(verificationEmail);
+    setLoading(false);
+    if (res.success) {
+      if (res.code) {
+        setBackupDisplayCode(res.code);
+      }
+      setResendCooldown(60);
+    } else {
+      setError(res.message);
     }
   };
 
@@ -181,16 +249,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             {tab === 'signup' && 'Create Advertiser Account'}
             {tab === 'wallet' && 'Web3 Wallet Sign In'}
             {tab === 'forgot' && 'Reset Account Password'}
+            {tab === 'verify' && 'Verify Your Email'}
           </h2>
           <p className="text-xs text-slate-400">
             {tab === 'forgot'
               ? 'Receive an automated verification email code to set your new password.'
+              : tab === 'verify'
+              ? 'Enter the 6-digit confirmation code dispatched to your inbox to activate your account.'
               : 'Track real-time ad statistics, manage bids, and climb the leaderboard.'}
           </p>
         </div>
 
-        {/* Tab Switcher (Visible unless in password reset mode) */}
-        {tab !== 'forgot' ? (
+        {/* Tab Switcher (Visible unless in password reset or email verification mode) */}
+        {tab !== 'forgot' && tab !== 'verify' ? (
           <div className="grid grid-cols-3 gap-1 p-1 bg-slate-950 rounded-xl border border-slate-800 text-xs">
             <button
               type="button"
@@ -247,6 +318,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               setTab('signin');
               setError(null);
               setResetSuccessMessage(null);
+              setVerificationSuccess(false);
             }}
             className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold flex items-center gap-1.5 transition-colors"
           >
@@ -505,8 +577,134 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </div>
         )}
 
+        {/* TAB 5: EMAIL VERIFICATION */}
+        {tab === 'verify' && (
+          <div className="space-y-4">
+            {verificationSuccess ? (
+              <div className="p-6 rounded-xl bg-emerald-950/40 border border-emerald-800 text-center space-y-2 animate-in zoom-in-95 duration-200">
+                <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
+                <h4 className="text-base font-bold text-white">Email Verified Successfully!</h4>
+                <p className="text-xs text-emerald-300">
+                  Your advertiser account is activated. Redirecting to your dashboard...
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleVerifySubmit} className="space-y-4">
+                <div className="p-3.5 rounded-xl bg-indigo-950/40 border border-indigo-500/30 text-xs text-indigo-200 space-y-1.5">
+                  <div className="font-bold flex items-center gap-1.5 text-indigo-400">
+                    <ShieldCheck className="w-4 h-4 text-indigo-400" />
+                    <span>Enter Confirmation Code</span>
+                  </div>
+                  <p className="text-[11px] text-indigo-300/90 leading-relaxed">
+                    We dispatched a 6-digit confirmation code to:
+                  </p>
+                  <div className="font-mono font-bold text-white bg-indigo-900/40 px-2.5 py-1 rounded border border-indigo-400/20 text-xs truncate">
+                    {verificationEmail || 'your email'}
+                  </div>
+                  <p className="text-[10px] text-slate-400 pt-0.5">
+                    💡 Check your Inbox and your <strong>Spam / Promotions</strong> folder.
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-slate-300">6-Digit Verification Code</label>
+                    {backupDisplayCode && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setVerificationCode(backupDisplayCode);
+                          setShowDirectCode(true);
+                        }}
+                        className="text-[11px] text-amber-400 hover:text-amber-300 font-medium transition-colors flex items-center gap-1"
+                      >
+                        <Sparkles className="w-3 h-3" />
+                        <span>Auto-fill Code</span>
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    maxLength={6}
+                    value={verificationCode}
+                    onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
+                    placeholder="123456"
+                    autoFocus
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-3 text-xl font-mono font-extrabold tracking-[0.3em] text-center text-amber-400 focus:outline-none focus:border-amber-400 shadow-inner"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading || verificationCode.length !== 6}
+                  className="w-full py-2.5 text-xs font-bold text-slate-950 bg-amber-400 hover:bg-amber-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-lg shadow-amber-400/20 transition-all flex items-center justify-center gap-2"
+                >
+                  <Check className="w-4 h-4 stroke-[3]" />
+                  <span>{loading ? 'Verifying Code...' : 'Verify & Activate Account'}</span>
+                </button>
+
+                <div className="flex items-center justify-between pt-1 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTab('signup');
+                      setError(null);
+                    }}
+                    className="text-slate-400 hover:text-white transition-colors"
+                  >
+                    Change Email
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleResendCode}
+                    disabled={resendCooldown > 0 || loading}
+                    className="text-indigo-400 hover:text-indigo-300 disabled:text-slate-500 font-medium transition-colors"
+                  >
+                    {resendCooldown > 0 ? `Resend Code (${resendCooldown}s)` : 'Resend Code'}
+                  </button>
+                </div>
+
+                {/* Instant Reveal / Auto-Fill Option */}
+                {backupDisplayCode && (
+                  <div className="pt-2 border-t border-slate-800/80">
+                    <button
+                      type="button"
+                      onClick={() => setShowDirectCode(!showDirectCode)}
+                      className="w-full py-1.5 px-3 rounded-lg bg-slate-950 border border-slate-800 hover:border-slate-700 text-[11px] text-slate-400 hover:text-slate-200 transition-colors flex items-center justify-between"
+                    >
+                      <span>Email delayed or in Spam?</span>
+                      <span className="text-amber-400 font-semibold underline">
+                        {showDirectCode ? 'Hide Code' : 'View Code on Screen'}
+                      </span>
+                    </button>
+                    {showDirectCode && (
+                      <div className="mt-2 p-2.5 rounded-lg bg-amber-950/30 border border-amber-500/30 text-center animate-in fade-in duration-150">
+                        <div className="text-[10px] text-amber-300 uppercase font-mono tracking-wider">
+                          Your Verification Code:
+                        </div>
+                        <div className="text-xl font-mono font-bold text-amber-400 tracking-[0.25em] mt-0.5">
+                          {backupDisplayCode}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setVerificationCode(backupDisplayCode)}
+                          className="mt-1.5 text-[10px] text-indigo-400 hover:text-indigo-300 font-semibold underline"
+                        >
+                          Click to insert this code into the box above
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </form>
+            )}
+          </div>
+        )}
+
         {/* Instant 1-Click Fast Logins */}
-        {tab !== 'forgot' && (
+        {tab !== 'forgot' && tab !== 'verify' && (
           <div className="pt-2 border-t border-slate-800 space-y-2">
             <div className="text-[10px] uppercase font-mono tracking-wider text-slate-500 text-center">
               Or Quick 1-Click Demo Profiles

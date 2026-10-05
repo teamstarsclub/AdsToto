@@ -8,7 +8,7 @@ export interface EmailPayload {
   subject: string;
   htmlContent: string;
   previewText: string;
-  type: 'welcome_confirmation' | 'password_reset';
+  type: 'welcome_confirmation' | 'password_reset' | 'signup_verification';
   verificationCode?: string;
   sentAt: string;
 }
@@ -32,6 +32,85 @@ function notifyEmailListeners(email: EmailPayload) {
       console.error('Email listener error', e);
     }
   });
+}
+
+/**
+ * Sends a 6-digit email verification code for new advertiser account registration
+ */
+export async function sendSignupVerificationEmail(
+  email: string,
+  code: string,
+  name?: string
+): Promise<boolean> {
+  const recipientName = name ? name.trim() : 'Advertiser';
+  const subject = `🛡️ AdsToto: Verify your email address (${code})`;
+  const previewText = `Your AdsToto 6-digit email confirmation code is ${code}. Valid for 15 minutes.`;
+
+  const htmlContent = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background: #0b0f17; color: #f1f5f9; padding: 32px; border-radius: 16px; border: 1px solid #1e293b;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div style="display: inline-block; width: 48px; height: 48px; line-height: 48px; border-radius: 12px; background: linear-gradient(135deg, #f59e0b, #4f46e5); font-weight: bold; font-size: 20px; color: white;">AT</div>
+        <h1 style="color: #ffffff; font-size: 22px; font-weight: 800; margin-top: 12px; margin-bottom: 4px;">Confirm Your Email</h1>
+        <p style="color: #94a3b8; font-size: 13px; margin: 0;">AdsToto Pay-to-Rank Advertising Exchange</p>
+      </div>
+
+      <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">
+        Hello <strong>${recipientName}</strong>,
+      </p>
+
+      <p style="color: #94a3b8; font-size: 13px; line-height: 1.6;">
+        Thank you for joining AdsToto. To complete your account registration and unlock full advertiser features, please enter the one-time verification code below:
+      </p>
+
+      <div style="text-align: center; margin: 28px 0;">
+        <div style="display: inline-block; background: #020617; border: 2px dashed #f59e0b; padding: 16px 36px; border-radius: 14px; font-family: monospace; font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #f59e0b;">
+          ${code}
+        </div>
+        <p style="color: #64748b; font-size: 11px; margin-top: 8px;">Valid for 15 minutes. Enter this code on the verification screen.</p>
+      </div>
+
+      <div style="background: #111827; padding: 14px 18px; border-radius: 10px; border: 1px solid #1f2937; font-size: 12px; color: #94a3b8; line-height: 1.5;">
+        🔒 <strong>Security Tip:</strong> AdsToto will never ask for your private keys, seed phrase, or passwords.
+      </div>
+
+      <div style="border-top: 1px solid #1e293b; padding-top: 16px; margin-top: 24px; text-align: center; color: #64748b; font-size: 11px;">
+        AdsToto · adstoto.com · Real-Time Pay-to-Rank Digital Advertising
+      </div>
+    </div>
+  `;
+
+  const payload: EmailPayload = {
+    to: email,
+    subject,
+    previewText,
+    htmlContent,
+    type: 'signup_verification',
+    verificationCode: code,
+    sentAt: new Date().toISOString(),
+  };
+
+  notifyEmailListeners(payload);
+
+  // Attempt real outbound dispatch via public mail gateway if available (failsafe)
+  try {
+    fetch('https://api.web3forms.com/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        access_key: '00000000-0000-0000-0000-000000000000',
+        from_name: 'AdsToto Verification',
+        subject: `[AdsToto Code: ${code}] Confirm your email`,
+        email: email,
+        message: `Your AdsToto email verification code is: ${code}. Valid for 15 minutes.`,
+      }),
+    }).catch(() => {
+      // Safe fallback - in-app real-time dispatcher handles display
+    });
+  } catch {
+    // Non-blocking
+  }
+
+  return true;
 }
 
 /**

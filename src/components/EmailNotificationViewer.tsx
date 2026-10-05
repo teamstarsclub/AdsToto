@@ -61,7 +61,9 @@ export const EmailNotificationViewer: React.FC<EmailNotificationViewerProps> = (
         {activeEmail.verificationCode && (
           <div className="mt-3 p-2 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
             <div className="flex items-center gap-2">
-              <span className="text-slate-400 text-[11px]">Reset Code:</span>
+              <span className="text-slate-400 text-[11px]">
+                {activeEmail.type === 'signup_verification' ? 'Confirmation Code:' : 'Verification Code:'}
+              </span>
               <span className="font-mono font-bold text-amber-400 text-sm tracking-wider">
                 {activeEmail.verificationCode}
               </span>

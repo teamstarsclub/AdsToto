@@ -1,10 +1,15 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { UserProfile, AuthState } from '../types/auth';
-import { sendWelcomeConfirmationEmail, sendPasswordResetEmail } from '../services/emailService';
+import { 
+  sendWelcomeConfirmationEmail, 
+  sendPasswordResetEmail,
+  sendSignupVerificationEmail 
+} from '../services/emailService';
 
 const STORAGE_KEY_AUTH = 'adstoto_auth_user_v2';
 const STORAGE_KEY_USERS_DB = 'adstoto_registered_users_v2';
 const STORAGE_KEY_PASSWORD_RESETS = 'adstoto_password_resets_v1';
+const STORAGE_KEY_PENDING_VERIFICATIONS = 'adstoto_pending_verifications_v2';
 
 interface StoredAccount extends UserProfile {
   passwordHash?: string;
@@ -14,6 +19,24 @@ interface ResetToken {
   email: string;
   code: string;
   expiresAt: number;
+}
+
+interface PendingVerification {
+  email: string;
+  code: string;
+  expiresAt: number;
+  profileData: {
+    id: string;
+    name: string;
+    email: string;
+    brandName: string;
+    websiteUrl: string;
+    avatarBg: string;
+    avatarInitials: string;
+    createdAt: string;
+    tier: 'Starter Advertiser' | 'Growth Marketer' | 'Apex Partner';
+    passwordHash?: string;
+  };
 }
 
 const DEFAULT_DEMO_USER: UserProfile = {
@@ -58,7 +81,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [user]);
 
-  const login = async (email: string, _password?: string): Promise<{ success: boolean; message?: string }> => {
+  const login = async (email: string, _password?: string): Promise<{ success: boolean; message?: string; requiresVerification?: boolean; unverifiedEmail?: string }> => {
     const cleanEmail = email.trim().toLowerCase();
     if (!cleanEmail || !cleanEmail.includes('@')) {
       return { success: false, message: 'Please enter a valid email address.' };
@@ -75,6 +98,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return { success: true };
       }
 
+      // Check if there is an unverified pending signup for this email
+      const rawPending = localStorage.getItem(STORAGE_KEY_PENDING_VERIFICATIONS);
+      const pendingList: PendingVerification[] = rawPending ? JSON.parse(rawPending) : [];
+      const pendingFound = pendingList.find((p) => p.email === cleanEmail && p.expiresAt > Date.now());
+
+      if (pendingFound) {
+        return {
+          success: false,
+          requiresVerification: true,
+          unverifiedEmail: cleanEmail,
+          message: 'Your email address is pending verification. Please enter your 6-digit confirmation code.',
+        };
+      }
+
       // If user logs in with email that doesn't exist yet, seamlessly log in with a clean profile
       const namePart = cleanEmail.split('@')[0];
       const initials = namePart.substring(0, 2).toUpperCase();
@@ -87,6 +124,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         avatarInitials: initials,
         createdAt: new Date().toISOString(),
         tier: 'Growth Marketer',
+        isEmailVerified: true,
       };
 
       db.push(newProfile);
@@ -104,7 +142,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     brandName: string;
     websiteUrl?: string;
     password?: string;
-  }): Promise<{ success: boolean; message?: string }> => {
+  }): Promise<{ success: boolean; message?: string; requiresVerification?: boolean; code?: string }> => {
     const cleanEmail = data.email.trim().toLowerCase();
     const cleanName = data.name.trim();
     const cleanBrand = data.brandName.trim();
@@ -131,7 +169,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     ];
     const randomBg = bgGradients[Math.floor(Math.random() * bgGradients.length)];
 
-    const newProfile: UserProfile = {
+    const newProfileData: PendingVerification['profileData'] = {
       id: 'usr-' + Math.random().toString(36).substring(2, 9),
       name: cleanName,
       email: cleanEmail,
@@ -141,26 +179,158 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       avatarInitials: initials,
       createdAt: new Date().toISOString(),
       tier: 'Starter Advertiser',
+      passwordHash: data.password || 'pass123',
     };
 
+    // Generate 6-digit verification code
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+
     try {
+      const rawPending = localStorage.getItem(STORAGE_KEY_PENDING_VERIFICATIONS);
+      const pendingList: PendingVerification[] = rawPending ? JSON.parse(rawPending) : [];
+      const filteredPending = pendingList.filter((p) => p.email !== cleanEmail && p.expiresAt > Date.now());
+
+      filteredPending.push({
+        email: cleanEmail,
+        code: verificationCode,
+        expiresAt: Date.now() + 15 * 60 * 1000, // 15 minutes validity
+        profileData: newProfileData,
+      });
+
+      localStorage.setItem(STORAGE_KEY_PENDING_VERIFICATIONS, JSON.stringify(filteredPending));
+
+      // Dispatch 6-digit confirmation code to email
+      await sendSignupVerificationEmail(cleanEmail, verificationCode, cleanName);
+
+      return {
+        success: true,
+        requiresVerification: true,
+        code: verificationCode,
+      };
+    } catch {
+      return { success: false, message: 'Failed to initiate registration. Please try again.' };
+    }
+  };
+
+  const verifySignupEmail = async (
+    email: string,
+    code: string
+  ): Promise<{ success: boolean; message?: string }> => {
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanCode = code.trim();
+
+    if (!cleanCode || cleanCode.length !== 6) {
+      return { success: false, message: 'Please enter a valid 6-digit verification code.' };
+    }
+
+    try {
+      const rawPending = localStorage.getItem(STORAGE_KEY_PENDING_VERIFICATIONS);
+      const pendingList: PendingVerification[] = rawPending ? JSON.parse(rawPending) : [];
+      const pendingRecord = pendingList.find((p) => p.email === cleanEmail && p.code === cleanCode);
+
+      if (!pendingRecord) {
+        return {
+          success: false,
+          message: 'Invalid verification code. Please check the code in your email or click Resend.',
+        };
+      }
+
+      if (Date.now() > pendingRecord.expiresAt) {
+        return {
+          success: false,
+          message: 'This verification code has expired. Please click Resend Code.',
+        };
+      }
+
+      // Activate user account
+      const verifiedUser: UserProfile = {
+        id: pendingRecord.profileData.id,
+        name: pendingRecord.profileData.name,
+        email: pendingRecord.profileData.email,
+        brandName: pendingRecord.profileData.brandName,
+        websiteUrl: pendingRecord.profileData.websiteUrl,
+        avatarBg: pendingRecord.profileData.avatarBg,
+        avatarInitials: pendingRecord.profileData.avatarInitials,
+        createdAt: pendingRecord.profileData.createdAt,
+        tier: pendingRecord.profileData.tier,
+        isEmailVerified: true,
+        emailVerifiedAt: new Date().toISOString(),
+      };
+
       const rawDb = localStorage.getItem(STORAGE_KEY_USERS_DB);
       const db: StoredAccount[] = rawDb ? JSON.parse(rawDb) : [];
-      db.push(newProfile);
-      localStorage.setItem(STORAGE_KEY_USERS_DB, JSON.stringify(db));
-      setUser(newProfile);
+      const filteredDb = db.filter((u) => u.email.toLowerCase() !== cleanEmail);
+      filteredDb.push({
+        ...verifiedUser,
+        passwordHash: pendingRecord.profileData.passwordHash,
+      });
 
-      // Trigger real transactional welcome confirmation email
+      localStorage.setItem(STORAGE_KEY_USERS_DB, JSON.stringify(filteredDb));
+
+      // Remove from pending
+      const remainingPending = pendingList.filter((p) => p.email !== cleanEmail);
+      localStorage.setItem(STORAGE_KEY_PENDING_VERIFICATIONS, JSON.stringify(remainingPending));
+
+      // Set logged in user
+      setUser(verifiedUser);
+
+      // Dispatch welcome email
       await sendWelcomeConfirmationEmail({
-        name: cleanName,
-        email: cleanEmail,
-        brandName: newProfile.brandName,
+        name: verifiedUser.name,
+        email: verifiedUser.email,
+        brandName: verifiedUser.brandName,
       });
 
       return { success: true };
     } catch {
-      setUser(newProfile);
-      return { success: true };
+      return { success: false, message: 'Verification failed. Please try again.' };
+    }
+  };
+
+  const resendVerificationEmail = async (
+    email: string
+  ): Promise<{ success: boolean; message: string; code?: string }> => {
+    const cleanEmail = email.trim().toLowerCase();
+    const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    try {
+      const rawPending = localStorage.getItem(STORAGE_KEY_PENDING_VERIFICATIONS);
+      const pendingList: PendingVerification[] = rawPending ? JSON.parse(rawPending) : [];
+      const existing = pendingList.find((p) => p.email === cleanEmail);
+
+      const name = existing ? existing.profileData.name : 'Advertiser';
+      const updatedList = pendingList.filter((p) => p.email !== cleanEmail);
+
+      updatedList.push({
+        email: cleanEmail,
+        code: newCode,
+        expiresAt: Date.now() + 15 * 60 * 1000,
+        profileData: existing
+          ? existing.profileData
+          : {
+              id: 'usr-' + Math.random().toString(36).substring(2, 9),
+              name,
+              email: cleanEmail,
+              brandName: `${name}'s Brand`,
+              websiteUrl: '',
+              avatarBg: 'from-amber-500 to-indigo-600',
+              avatarInitials: name.substring(0, 2).toUpperCase(),
+              createdAt: new Date().toISOString(),
+              tier: 'Starter Advertiser',
+            },
+      });
+
+      localStorage.setItem(STORAGE_KEY_PENDING_VERIFICATIONS, JSON.stringify(updatedList));
+
+      await sendSignupVerificationEmail(cleanEmail, newCode, name);
+
+      return {
+        success: true,
+        message: `Fresh 6-digit confirmation code dispatched to ${cleanEmail}.`,
+        code: newCode,
+      };
+    } catch {
+      return { success: false, message: 'Failed to resend confirmation code.' };
     }
   };
 
@@ -309,6 +479,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isAuthenticated: !!user,
         login,
         signup,
+        verifySignupEmail,
+        resendVerificationEmail,
         connectWallet,
         logout,
         updateProfile,
