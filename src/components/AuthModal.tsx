@@ -21,6 +21,7 @@ interface AuthModalProps {
   onClose: () => void;
   defaultTab?: 'signin' | 'signup';
   autoFillCode?: string;
+  onVerificationSuccess?: () => void;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -28,6 +29,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onClose,
   defaultTab = 'signin',
   autoFillCode,
+  onVerificationSuccess,
 }) => {
   const { 
     login, 
@@ -147,7 +149,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setVerificationSuccess(true);
       setTimeout(() => {
         onClose();
-      }, 1500);
+        if (onVerificationSuccess) {
+          onVerificationSuccess();
+        }
+      }, 1200);
     } else {
       setError(res.message || 'Verification failed.');
     }

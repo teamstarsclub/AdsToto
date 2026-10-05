@@ -260,6 +260,10 @@ function MainApp() {
           setIsAuthModalOpen(false);
           setAutoFillResetCode(undefined);
         }}
+        onVerificationSuccess={() => {
+          setIsAuthModalOpen(false);
+          setActiveTab('my-campaigns');
+        }}
         autoFillCode={autoFillResetCode}
       />
 

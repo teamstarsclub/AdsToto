@@ -56,10 +56,18 @@ export const MyCampaignsView: React.FC<MyCampaignsViewProps> = ({
               My Advertising Command Center
             </h2>
             {user && (
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-500/40 text-emerald-400 font-semibold flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>{user.brandName}</span>
-              </span>
+              <>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-500/40 text-emerald-400 font-semibold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span>{user.brandName}</span>
+                </span>
+                {user.isEmailVerified && (
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-950/80 border border-indigo-500/50 text-indigo-300 font-bold flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3 text-indigo-400" />
+                    <span>Verified SaaS Advertiser</span>
+                  </span>
+                )}
+              </>
             )}
           </div>
           <p className="text-xs text-slate-400 mt-1">
