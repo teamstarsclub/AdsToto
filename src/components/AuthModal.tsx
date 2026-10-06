@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { 
-  getGoogleClientId, 
-  requestRealGoogleSignIn, 
-  GoogleUserProfile 
-} from '../services/googleAuthService';
+import { signInWithGooglePopup } from '../services/firebaseAuth';
 import { 
   X, 
   Wallet, 
@@ -35,41 +31,37 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Direct Google Sign-In Handler (branded directly to adstoto.com)
+  // Real Google Sign-In Handler (Reliable official Google authentication)
   const handleGoogleClick = async () => {
     setError(null);
     setLoading(true);
 
-    const clientId = getGoogleClientId();
+    try {
+      const googleUser = await signInWithGooglePopup();
+      
+      const result = await signInWithGoogle({
+        name: googleUser.name,
+        email: googleUser.email,
+        picture: googleUser.picture,
+      });
 
-    await requestRealGoogleSignIn(
-      clientId,
-      async (googleProfile: GoogleUserProfile) => {
-        setLoading(false);
-        const result = await signInWithGoogle({
-          name: googleProfile.name,
-          email: googleProfile.email,
-          picture: googleProfile.picture,
-        });
-
-        if (result.success) {
-          setAuthSuccess(`Signed in with Google as ${googleProfile.email}!`);
-          setTimeout(() => {
-            onClose();
-            if (onVerificationSuccess) onVerificationSuccess();
-          }, 800);
-        } else {
-          setError(result.message || 'Google sign-in failed.');
-        }
-      },
-      (gisErrorMessage: string) => {
-        setLoading(false);
-        if (gisErrorMessage.toLowerCase().includes('closed') || gisErrorMessage.toLowerCase().includes('cancel')) {
-          return;
-        }
-        setError(gisErrorMessage || 'Google sign-in failed. Please try again.');
+      setLoading(false);
+      if (result.success) {
+        setAuthSuccess(`Signed in with Google as ${googleUser.email}!`);
+        setTimeout(() => {
+          onClose();
+          if (onVerificationSuccess) onVerificationSuccess();
+        }, 800);
+      } else {
+        setError(result.message || 'Google sign-in failed.');
       }
-    );
+    } catch (err: any) {
+      setLoading(false);
+      if (err?.isCancelled) {
+        return;
+      }
+      setError(err?.message || 'Google authentication was not completed. Please try again.');
+    }
   };
 
   // Web3 Browser Wallet Connect
