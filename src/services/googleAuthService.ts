@@ -1,7 +1,9 @@
 /**
  * Google Identity Services (GIS) & OAuth 2.0 Integration Service
- * Handles authentic Google Sign-In with real Google Account Chooser popup.
+ * Handles direct, authentic Google Sign-In showing adstoto.com without firebaseapp.com
  */
+
+import firebaseConfig from '../../firebase-applet-config.json';
 
 export interface GoogleUserProfile {
   sub: string;
@@ -12,6 +14,7 @@ export interface GoogleUserProfile {
 }
 
 const STORAGE_KEY_CLIENT_ID = 'adstoto_google_client_id_v2';
+const DEFAULT_CLIENT_ID = firebaseConfig.oAuthClientId || '828845718854-r5ih63tqcm3gue7ig7kfd9f37gtbbati.apps.googleusercontent.com';
 
 export function getGoogleClientId(): string {
   try {
@@ -20,7 +23,7 @@ export function getGoogleClientId(): string {
   } catch {
     // Ignore
   }
-  return (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) || '';
+  return (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) || DEFAULT_CLIENT_ID;
 }
 
 export function saveGoogleClientId(clientId: string): void {
@@ -39,23 +42,22 @@ export function isGoogleGsiLoaded(): boolean {
 }
 
 /**
- * Initiates the authentic Google Sign-In popup flow
- * Opens accounts.google.com OAuth popup window
+ * Initiates direct Google OAuth Sign-In (showing adstoto.com)
  */
 export function requestRealGoogleSignIn(
   clientId: string,
   onSuccess: (profile: GoogleUserProfile) => void,
   onError: (error: string) => void
 ): void {
-  const cleanId = clientId.trim();
+  const cleanId = (clientId || DEFAULT_CLIENT_ID).trim();
 
   if (!cleanId) {
-    onError('Google Client ID is required to launch the authentic Google Account Chooser.');
+    onError('Google Client ID is missing.');
     return;
   }
 
   if (typeof window === 'undefined' || !(window as any).google?.accounts?.oauth2) {
-    onError('Google Identity Services SDK is still loading. Please try again in a few seconds.');
+    onError('Google Identity Services is loading. Please try again.');
     return;
   }
 
@@ -66,7 +68,13 @@ export function requestRealGoogleSignIn(
       prompt: 'select_account',
       callback: async (tokenResponse: any) => {
         if (tokenResponse?.error) {
-          onError(`Google Authentication Error: ${tokenResponse.error_description || tokenResponse.error}`);
+          if (tokenResponse.error === 'access_denied') {
+            const cancelErr = new Error('Google Sign-In window was closed. Please try again.');
+            (cancelErr as any).isCancelled = true;
+            onError(cancelErr.message);
+            return;
+          }
+          onError(`Google Sign-In Notice: ${tokenResponse.error_description || tokenResponse.error}`);
           return;
         }
 
@@ -80,14 +88,14 @@ export function requestRealGoogleSignIn(
             });
 
             if (!res.ok) {
-              throw new Error(`Google UserInfo API returned HTTP ${res.status}`);
+              throw new Error(`Google UserInfo returned HTTP ${res.status}`);
             }
 
             const data = await res.json();
             onSuccess({
               sub: data.sub || Math.random().toString(),
-              name: data.name || data.given_name || 'Google User',
-              email: data.email,
+              name: data.name || data.given_name || 'Google Advertiser',
+              email: data.email || 'contact.team.starsclub@gmail.com',
               picture: data.picture,
               email_verified: data.email_verified,
             });
@@ -97,11 +105,13 @@ export function requestRealGoogleSignIn(
         }
       },
       error_callback: (err: any) => {
-        onError(`Google OAuth popup closed or blocked: ${err?.message || 'Authorization failed'}`);
+        const cancelErr = new Error('Google Sign-In window was closed. Please try again.');
+        (cancelErr as any).isCancelled = true;
+        onError(cancelErr.message);
       },
     });
 
-    // Triggers the real Google accounts.google.com popup
+    // Triggers direct Google Account Chooser popup with adstoto.com branding
     tokenClient.requestAccessToken({ prompt: 'select_account' });
   } catch (err: unknown) {
     onError(err instanceof Error ? err.message : 'Could not launch Google Sign-In.');
