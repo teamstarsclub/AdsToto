@@ -5,7 +5,6 @@ import {
   requestRealGoogleSignIn, 
   GoogleUserProfile 
 } from '../services/googleAuthService';
-import { signInWithGooglePopup } from '../services/firebaseAuth';
 import { 
   X, 
   Wallet, 
@@ -43,84 +42,34 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     const clientId = getGoogleClientId();
 
-    // 1. Try Direct Google Identity Services (GIS) - shows adstoto.com directly
-    if (typeof window !== 'undefined' && (window as any).google?.accounts?.oauth2) {
-      requestRealGoogleSignIn(
-        clientId,
-        async (googleProfile: GoogleUserProfile) => {
-          setLoading(false);
-          const result = await signInWithGoogle({
-            name: googleProfile.name,
-            email: googleProfile.email,
-            picture: googleProfile.picture,
-          });
+    await requestRealGoogleSignIn(
+      clientId,
+      async (googleProfile: GoogleUserProfile) => {
+        setLoading(false);
+        const result = await signInWithGoogle({
+          name: googleProfile.name,
+          email: googleProfile.email,
+          picture: googleProfile.picture,
+        });
 
-          if (result.success) {
-            setAuthSuccess(`Signed in with Google as ${googleProfile.email}!`);
-            setTimeout(() => {
-              onClose();
-              if (onVerificationSuccess) onVerificationSuccess();
-            }, 800);
-          } else {
-            setError(result.message || 'Google sign-in failed.');
-          }
-        },
-        async (gisErrorMessage: string) => {
-          // If popup was closed by user, just reset cleanly
-          if (gisErrorMessage.toLowerCase().includes('closed') || gisErrorMessage.toLowerCase().includes('cancel')) {
-            setLoading(false);
-            return;
-          }
-
-          // Fallback to Firebase Google popup
-          try {
-            const firebaseUser = await signInWithGooglePopup();
-            const result = await signInWithGoogle({
-              name: firebaseUser.name,
-              email: firebaseUser.email,
-              picture: firebaseUser.picture,
-            });
-
-            setLoading(false);
-            if (result.success) {
-              setAuthSuccess(`Signed in with Google as ${firebaseUser.email}!`);
-              setTimeout(() => {
-                onClose();
-                if (onVerificationSuccess) onVerificationSuccess();
-              }, 800);
-            }
-          } catch (fbErr: any) {
-            setLoading(false);
-            if (fbErr?.isCancelled) return;
-            setError(fbErr?.message || gisErrorMessage || 'Google sign-in failed. Please try again.');
-          }
+        if (result.success) {
+          setAuthSuccess(`Signed in with Google as ${googleProfile.email}!`);
+          setTimeout(() => {
+            onClose();
+            if (onVerificationSuccess) onVerificationSuccess();
+          }, 800);
+        } else {
+          setError(result.message || 'Google sign-in failed.');
         }
-      );
-      return;
-    }
-
-    // 2. Direct fallback via Firebase
-    try {
-      const googleUser = await signInWithGooglePopup();
-      const result = await signInWithGoogle({
-        name: googleUser.name,
-        email: googleUser.email,
-        picture: googleUser.picture,
-      });
-
-      setLoading(false);
-      if (result.success) {
-        setAuthSuccess(`Signed in with Google as ${googleUser.email}!`);
-        setTimeout(() => {
-          onClose();
-          if (onVerificationSuccess) onVerificationSuccess();
-        }, 800);
+      },
+      (gisErrorMessage: string) => {
+        setLoading(false);
+        if (gisErrorMessage.toLowerCase().includes('closed') || gisErrorMessage.toLowerCase().includes('cancel')) {
+          return;
+        }
+        setError(gisErrorMessage || 'Google sign-in failed. Please try again.');
       }
-    } catch (err: any) {
-      setLoading(false);
-      if (err?.isCancelled) return;
-      setError(err?.message || 'Google sign-in failed. Please try again.');
-    }
+    );
   };
 
   // Web3 Browser Wallet Connect

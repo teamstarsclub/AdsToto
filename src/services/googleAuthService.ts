@@ -1,6 +1,6 @@
 /**
  * Google Identity Services (GIS) & OAuth 2.0 Integration Service
- * Handles direct, authentic Google Sign-In showing adstoto.com without firebaseapp.com
+ * Branded 100% to adstoto.com without any firebaseapp.com middleman.
  */
 
 import firebaseConfig from '../../firebase-applet-config.json';
@@ -14,7 +14,9 @@ export interface GoogleUserProfile {
 }
 
 const STORAGE_KEY_CLIENT_ID = 'adstoto_google_client_id_v2';
-const DEFAULT_CLIENT_ID = firebaseConfig.oAuthClientId || '828845718854-r5ih63tqcm3gue7ig7kfd9f37gtbbati.apps.googleusercontent.com';
+export const OAUTH_CLIENT_ID =
+  firebaseConfig.oAuthClientId ||
+  '828845718854-r5ih63tqcm3gue7ig7kfd9f37gtbbati.apps.googleusercontent.com';
 
 export function getGoogleClientId(): string {
   try {
@@ -23,7 +25,7 @@ export function getGoogleClientId(): string {
   } catch {
     // Ignore
   }
-  return (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) || DEFAULT_CLIENT_ID;
+  return (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) || OAUTH_CLIENT_ID;
 }
 
 export function saveGoogleClientId(clientId: string): void {
@@ -35,29 +37,51 @@ export function saveGoogleClientId(clientId: string): void {
 }
 
 /**
- * Checks whether Google Identity Services (GIS) script is loaded
+ * Ensures Google Identity Services (GIS) client script is loaded and ready
  */
-export function isGoogleGsiLoaded(): boolean {
-  return typeof window !== 'undefined' && !!(window as any).google?.accounts;
+export async function ensureGoogleGsiLoaded(): Promise<boolean> {
+  if (typeof window === 'undefined') return false;
+  if ((window as any).google?.accounts?.oauth2) return true;
+
+  return new Promise((resolve) => {
+    const existingScript = document.querySelector('script[src*="accounts.google.com/gsi/client"]');
+    if (!existingScript) {
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.onload = () => resolve(!!(window as any).google?.accounts?.oauth2);
+      script.onerror = () => resolve(false);
+      document.head.appendChild(script);
+    } else {
+      let attempts = 0;
+      const interval = setInterval(() => {
+        attempts++;
+        if ((window as any).google?.accounts?.oauth2) {
+          clearInterval(interval);
+          resolve(true);
+        } else if (attempts > 50) {
+          clearInterval(interval);
+          resolve(false);
+        }
+      }, 50);
+    }
+  });
 }
 
 /**
- * Initiates direct Google OAuth Sign-In (showing adstoto.com)
+ * Initiates authentic Google Sign-In directly to adstoto.com (no firebaseapp.com)
  */
-export function requestRealGoogleSignIn(
+export async function requestRealGoogleSignIn(
   clientId: string,
   onSuccess: (profile: GoogleUserProfile) => void,
   onError: (error: string) => void
-): void {
-  const cleanId = (clientId || DEFAULT_CLIENT_ID).trim();
+): Promise<void> {
+  const cleanId = (clientId || OAUTH_CLIENT_ID).trim();
 
-  if (!cleanId) {
-    onError('Google Client ID is missing.');
-    return;
-  }
-
-  if (typeof window === 'undefined' || !(window as any).google?.accounts?.oauth2) {
-    onError('Google Identity Services is loading. Please try again.');
+  const isLoaded = await ensureGoogleGsiLoaded();
+  if (!isLoaded || !(window as any).google?.accounts?.oauth2) {
+    onError('Google Identity Services is still loading. Please try again.');
     return;
   }
 
@@ -69,7 +93,7 @@ export function requestRealGoogleSignIn(
       callback: async (tokenResponse: any) => {
         if (tokenResponse?.error) {
           if (tokenResponse.error === 'access_denied') {
-            const cancelErr = new Error('Google Sign-In window was closed. Please try again.');
+            const cancelErr = new Error('Google Sign-In window was closed.');
             (cancelErr as any).isCancelled = true;
             onError(cancelErr.message);
             return;
@@ -80,7 +104,7 @@ export function requestRealGoogleSignIn(
 
         if (tokenResponse?.access_token) {
           try {
-            // Fetch real user info from Google's official userinfo API
+            // Fetch real user info from Google's official userinfo endpoint
             const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
               headers: {
                 Authorization: `Bearer ${tokenResponse.access_token}`,
@@ -105,13 +129,13 @@ export function requestRealGoogleSignIn(
         }
       },
       error_callback: (err: any) => {
-        const cancelErr = new Error('Google Sign-In window was closed. Please try again.');
+        const cancelErr = new Error('Google Sign-In window was closed.');
         (cancelErr as any).isCancelled = true;
         onError(cancelErr.message);
       },
     });
 
-    // Triggers direct Google Account Chooser popup with adstoto.com branding
+    // Triggers direct Google Account Chooser popup branded to adstoto.com
     tokenClient.requestAccessToken({ prompt: 'select_account' });
   } catch (err: unknown) {
     onError(err instanceof Error ? err.message : 'Could not launch Google Sign-In.');
