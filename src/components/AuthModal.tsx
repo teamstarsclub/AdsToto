@@ -7,9 +7,9 @@ import {
   ShieldCheck, 
   Sparkles, 
   AlertCircle, 
-  CheckCircle2,
-  Lock,
-  ArrowRight
+  CheckCircle2, 
+  ShieldAlert, 
+  ExternalLink 
 } from 'lucide-react';
 
 interface AuthModalProps {
@@ -28,6 +28,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [walletInput, setWalletInput] = useState('');
   const [isWeb3Open, setIsWeb3Open] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [unauthorizedDomain, setUnauthorizedDomain] = useState<string | null>(null);
+  const [firebaseProjectId, setFirebaseProjectId] = useState<string>('gen-lang-client-0082104012');
   const [loading, setLoading] = useState(false);
   const [authSuccess, setAuthSuccess] = useState<string | null>(null);
 
@@ -36,6 +38,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   // Real Google Sign-In Popup Handler
   const handleGoogleClick = async () => {
     setError(null);
+    setUnauthorizedDomain(null);
     setLoading(true);
 
     try {
@@ -60,6 +63,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       }
     } catch (err: any) {
       setLoading(false);
+      if (err?.isUnauthorizedDomain) {
+        const domain = err?.domain || window.location.hostname;
+        setUnauthorizedDomain(domain);
+        if (err?.projectId) setFirebaseProjectId(err.projectId);
+        setError(`Domain "${domain}" is not yet authorized in Firebase Console.`);
+        return;
+      }
       setError(err?.message || 'Google authentication was not completed. Please try again.');
     }
   };
@@ -67,6 +77,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   // Web3 Browser Wallet Connect
   const handleConnectBrowserWallet = async () => {
     setError(null);
+    setUnauthorizedDomain(null);
     setLoading(true);
 
     try {
@@ -112,6 +123,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
     setError(null);
+    setUnauthorizedDomain(null);
     setLoading(true);
     const res = await connectWallet(walletInput.trim());
     setLoading(false);
@@ -155,8 +167,35 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </p>
         </div>
 
+        {/* Actionable Domain Authorization Guide if custom domain not yet whitelisted */}
+        {unauthorizedDomain && (
+          <div className="p-4 rounded-2xl bg-amber-950/40 border border-amber-500/50 text-xs text-amber-200 space-y-2.5 animate-in fade-in duration-150">
+            <div className="flex items-center gap-2 font-bold text-amber-400 text-xs">
+              <ShieldAlert className="w-4 h-4 shrink-0" />
+              <span>Authorize "{unauthorizedDomain}" in Firebase</span>
+            </div>
+            <p className="text-[11px] text-slate-300 leading-relaxed">
+              Firebase blocks Google authentication on custom domains until they are added to Authorized Domains:
+            </p>
+            <ol className="list-decimal list-inside space-y-1 text-[11px] text-slate-300">
+              <li>Open Firebase Console Settings</li>
+              <li>Under <strong>Authorized domains</strong>, click <strong>Add domain</strong></li>
+              <li>Type <strong className="font-mono text-amber-300">{unauthorizedDomain}</strong> and click Save</li>
+            </ol>
+            <a
+              href={`https://console.firebase.google.com/project/${firebaseProjectId}/authentication/settings`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs rounded-xl transition-all shadow mt-1"
+            >
+              <span>Open Firebase Authorized Domains Settings</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
+        )}
+
         {/* Error Alert */}
-        {error && (
+        {error && !unauthorizedDomain && (
           <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-800 text-xs text-rose-300 flex items-center gap-2.5 animate-in fade-in duration-150">
             <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
             <span>{error}</span>
@@ -171,7 +210,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </div>
         )}
 
-        {/* PRIMARY CTA: CONTINUER AVEC GOOGLE / CONTINUE WITH GOOGLE (EXACT USER SCREENSHOT) */}
+        {/* PRIMARY CTA: CONTINUER AVEC GOOGLE / CONTINUE WITH GOOGLE */}
         <div className="space-y-3 pt-1">
           <button
             type="button"

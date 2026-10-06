@@ -6,6 +6,7 @@ import {
   signOut 
 } from 'firebase/auth';
 import firebaseConfig from '../../firebase-applet-config.json';
+import { requestRealGoogleSignIn } from './googleAuthService';
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 export const auth = getAuth(app);
@@ -26,7 +27,7 @@ export interface GoogleAuthResult {
 }
 
 /**
- * Triggers authentic Google Account Chooser popup with graceful cancellation handling
+ * Triggers authentic Google Account Chooser popup with fallback and domain handling
  */
 export async function signInWithGooglePopup(): Promise<GoogleAuthResult> {
   try {
@@ -40,6 +41,46 @@ export async function signInWithGooglePopup(): Promise<GoogleAuthResult> {
       picture: user.photoURL || undefined,
     };
   } catch (error: any) {
+    // If the domain is not yet authorized in Firebase Console (e.g. custom domain adstoto.com)
+    if (error.code === 'auth/unauthorized-domain') {
+      console.warn('Firebase unauthorized-domain detected for host:', window.location.hostname);
+
+      // Attempt Google Identity Services fallback if OAuth client ID is present
+      const oAuthClientId = firebaseConfig.oAuthClientId;
+      if (oAuthClientId && typeof window !== 'undefined' && (window as any).google?.accounts?.oauth2) {
+        return new Promise<GoogleAuthResult>((resolve, reject) => {
+          requestRealGoogleSignIn(
+            oAuthClientId,
+            (profile) => {
+              resolve({
+                uid: profile.sub,
+                name: profile.name,
+                email: profile.email,
+                picture: profile.picture,
+              });
+            },
+            (gisError) => {
+              const customErr = new Error(
+                `Domain "${window.location.hostname}" is not authorized in Firebase. Please add "${window.location.hostname}" in Firebase Console > Authentication > Settings > Authorized Domains.`
+              );
+              (customErr as any).isUnauthorizedDomain = true;
+              (customErr as any).projectId = firebaseConfig.projectId;
+              (customErr as any).domain = window.location.hostname;
+              reject(customErr);
+            }
+          );
+        });
+      }
+
+      const domainErr = new Error(
+        `Domain "${window.location.hostname}" is not authorized in Firebase. Please add "${window.location.hostname}" in Firebase Console > Authentication > Settings > Authorized Domains.`
+      );
+      (domainErr as any).isUnauthorizedDomain = true;
+      (domainErr as any).projectId = firebaseConfig.projectId;
+      (domainErr as any).domain = window.location.hostname;
+      throw domainErr;
+    }
+
     // Graceful handling for user cancellation or closed popups
     if (error.code === 'auth/popup-closed-by-user') {
       const cancelErr = new Error('Google Sign-In window was closed. Please try again.');
@@ -59,7 +100,6 @@ export async function signInWithGooglePopup(): Promise<GoogleAuthResult> {
       throw blockedErr;
     }
 
-    console.warn('Google Sign-In Notice:', error.message || error);
     throw new Error(error.message || 'Failed to authenticate with Google.');
   }
 }
