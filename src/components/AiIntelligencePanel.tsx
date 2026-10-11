@@ -58,38 +58,42 @@ export const AiIntelligencePanel: React.FC<AiIntelligencePanelProps> = ({
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-amber-400" />
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-blue-600" />
             <span>AI Competitive Intelligence &amp; Search Grounding</span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 flex items-center gap-1 font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span>
+              <span>gemini-3.5-flash + Google Search</span>
+            </span>
           </h2>
-          <p className="text-sm text-slate-400 mt-1">
-            Grounded market intelligence powered by Gemini and Google Search to analyze ad competition and generate high-converting copy.
+          <p className="text-sm text-slate-500 mt-1">
+            Grounded market intelligence powered by Gemini 3.5 Flash and Google Search Grounding to analyze live ad competition and generate high-converting copy.
           </p>
         </div>
 
         <button
           onClick={() => setShowKeyInput(!showKeyInput)}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-300 bg-slate-900 border border-slate-800 rounded-lg hover:bg-slate-800 transition-colors w-fit"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-700 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-200 transition-colors w-fit cursor-pointer"
         >
-          <Key className="w-3.5 h-3.5 text-indigo-400" />
+          <Key className="w-3.5 h-3.5 text-slate-500" />
           <span>{userApiKey ? 'Gemini API Key Configured' : 'Configure Custom API Key'}</span>
         </button>
       </div>
 
       {showKeyInput && (
-        <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2">
-          <label className="text-xs text-slate-300 font-medium">Gemini API Key (Optional)</label>
+        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+          <label className="text-xs text-slate-700 font-medium">Gemini API Key (Optional)</label>
           <div className="flex gap-2">
             <input
               type="password"
               placeholder="AIzaSy..."
               value={userApiKey}
               onChange={(e) => handleSaveKey(e.target.value)}
-              className="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white"
+              className="flex-1 bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-slate-900 shadow-2xs"
             />
             <button
               onClick={() => setShowKeyInput(false)}
-              className="px-3 py-1.5 text-xs bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 font-semibold"
+              className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold cursor-pointer shadow-2xs"
             >
               Save
             </button>
@@ -101,8 +105,8 @@ export const AiIntelligencePanel: React.FC<AiIntelligencePanelProps> = ({
       )}
 
       {/* Query Bar */}
-      <div className="p-4 sm:p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
-        <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+      <div className="p-4 sm:p-6 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-4">
+        <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
           Enter Your Product Domain, Competitor URL, or Niche Topic
         </label>
         <div className="flex flex-col sm:flex-row gap-2.5">
@@ -114,14 +118,14 @@ export const AiIntelligencePanel: React.FC<AiIntelligencePanelProps> = ({
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAnalyze()}
               placeholder="e.g. Autonomous AI coding agents, SaaS churn analytics, Figma to code..."
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+              className="w-full bg-white border border-slate-300 rounded-xl pl-9 pr-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-2xs"
             />
           </div>
 
           <button
             onClick={handleAnalyze}
             disabled={loading || !query.trim()}
-            className="flex items-center justify-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-600/30 transition-all disabled:opacity-50 whitespace-nowrap"
+            className="flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-2xs transition-all disabled:opacity-50 whitespace-nowrap cursor-pointer"
           >
             {loading ? (
               <>
@@ -138,7 +142,7 @@ export const AiIntelligencePanel: React.FC<AiIntelligencePanelProps> = ({
         </div>
 
         {/* Quick prompt suggestions */}
-        <div className="flex items-center gap-2 flex-wrap text-xs text-slate-400">
+        <div className="flex items-center gap-2 flex-wrap text-xs text-slate-500">
           <span>Popular queries:</span>
           {['AI Video Generators', 'Next.js Boilerplates', 'Creator Sponsorships', 'Edge Database'].map((preset) => (
             <button
@@ -146,7 +150,7 @@ export const AiIntelligencePanel: React.FC<AiIntelligencePanelProps> = ({
               onClick={() => {
                 setQuery(preset);
               }}
-              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md transition-colors text-[11px]"
+              className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md transition-colors text-[11px] cursor-pointer"
             >
               {preset}
             </button>
@@ -159,17 +163,17 @@ export const AiIntelligencePanel: React.FC<AiIntelligencePanelProps> = ({
         <div className="space-y-6">
           {/* Key Bid Recommendations */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
-              <div className="text-xs text-slate-400">Recommended Entry Bid</div>
-              <div className="text-2xl font-bold text-white font-mono mt-1" data-tabular>
+            <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs">
+              <div className="text-xs text-slate-500">Recommended Entry Bid</div>
+              <div className="text-2xl font-bold text-slate-900 font-mono mt-1" data-tabular>
                 ${insight.recommendedBid}
               </div>
-              <div className="text-[11px] text-emerald-400 mt-1 flex items-center justify-between">
+              <div className="text-[11px] text-emerald-700 mt-1 flex items-center justify-between font-medium">
                 <span>Optimal Attention ROI</span>
                 {onApplyBid && (
                   <button
                     onClick={() => onApplyBid(insight.recommendedBid)}
-                    className="text-indigo-400 hover:text-indigo-300 font-semibold"
+                    className="text-blue-600 hover:text-blue-700 font-semibold cursor-pointer"
                   >
                     Apply &rarr;
                   </button>
@@ -177,22 +181,22 @@ export const AiIntelligencePanel: React.FC<AiIntelligencePanelProps> = ({
               </div>
             </div>
 
-            <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
-              <div className="text-xs text-slate-400">Minimum to Enter Top 3</div>
-              <div className="text-2xl font-bold text-amber-400 font-mono mt-1" data-tabular>
+            <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs">
+              <div className="text-xs text-slate-500">Minimum to Enter Top 3</div>
+              <div className="text-2xl font-bold text-slate-900 font-mono mt-1" data-tabular>
                 ${insight.minToEnterTop3}
               </div>
-              <div className="text-[11px] text-slate-400 mt-1">
+              <div className="text-[11px] text-slate-500 mt-1">
                 Required for high-intent exposure
               </div>
             </div>
 
-            <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
-              <div className="text-xs text-slate-400">Projected Click-Through Rate</div>
-              <div className="text-2xl font-bold text-indigo-400 font-mono mt-1" data-tabular>
+            <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs">
+              <div className="text-xs text-slate-500">Projected Click-Through Rate</div>
+              <div className="text-2xl font-bold text-blue-700 font-mono mt-1" data-tabular>
                 {insight.projectedCtr}%
               </div>
-              <div className="text-[11px] text-indigo-300 mt-1">
+              <div className="text-[11px] text-blue-600 mt-1">
                 +40% above baseline average
               </div>
             </div>
@@ -201,22 +205,22 @@ export const AiIntelligencePanel: React.FC<AiIntelligencePanelProps> = ({
           {/* Strategic Analysis & Taglines */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Strategic Summary */}
-            <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
-              <h3 className="text-sm font-bold text-white tracking-tight flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-emerald-400" />
+            <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-4">
+              <h3 className="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-emerald-600" />
                 <span>Market Dynamics &amp; Bidding Angle</span>
               </h3>
-              <p className="text-sm text-slate-300 leading-relaxed">
+              <p className="text-sm text-slate-600 leading-relaxed">
                 {insight.competitiveSummary}
               </p>
 
               <div className="pt-2">
-                <div className="text-xs font-semibold text-slate-400 mb-2">High-Intent Keyword Vectors:</div>
+                <div className="text-xs font-semibold text-slate-500 mb-2">High-Intent Keyword Vectors:</div>
                 <div className="flex flex-wrap gap-1.5">
                   {insight.trendingKeywords.map((kw, idx) => (
                     <span
                       key={idx}
-                      className="px-2.5 py-1 text-xs font-mono text-slate-300 bg-slate-950 rounded-lg border border-slate-800"
+                      className="px-2.5 py-1 text-xs font-mono text-slate-700 bg-slate-100 rounded-lg border border-slate-200"
                     >
                       {kw}
                     </span>
@@ -226,9 +230,9 @@ export const AiIntelligencePanel: React.FC<AiIntelligencePanelProps> = ({
 
               {/* Search Grounding Sources */}
               {insight.searchGroundingSources && insight.searchGroundingSources.length > 0 && (
-                <div className="pt-3 border-t border-slate-800/80">
-                  <div className="text-[11px] font-semibold text-slate-400 mb-1 flex items-center gap-1.5">
-                    <Globe className="w-3 h-3 text-indigo-400" />
+                <div className="pt-3 border-t border-slate-100">
+                  <div className="text-[11px] font-semibold text-slate-500 mb-1 flex items-center gap-1.5">
+                    <Globe className="w-3 h-3 text-blue-600" />
                     <span>Search Grounding Citations:</span>
                   </div>
                   <ul className="space-y-1">
@@ -238,7 +242,7 @@ export const AiIntelligencePanel: React.FC<AiIntelligencePanelProps> = ({
                           href={source.url}
                           target="_blank"
                           rel="noreferrer noopener"
-                          className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2"
+                          className="text-blue-600 hover:text-blue-700 underline underline-offset-2"
                         >
                           {source.title}
                         </a>
@@ -250,12 +254,12 @@ export const AiIntelligencePanel: React.FC<AiIntelligencePanelProps> = ({
             </div>
 
             {/* Generated High-Converting Taglines */}
-            <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
-              <h3 className="text-sm font-bold text-white tracking-tight flex items-center gap-2">
-                <Zap className="w-4 h-4 text-amber-400" />
+            <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-4">
+              <h3 className="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                <Zap className="w-4 h-4 text-blue-600" />
                 <span>High-Converting Ad Copy Variations</span>
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500">
                 Optimized for maximum click-through rates on competitive pay-to-rank boards:
               </p>
 
@@ -263,18 +267,18 @@ export const AiIntelligencePanel: React.FC<AiIntelligencePanelProps> = ({
                 {insight.suggestedTaglines.map((tagline, idx) => (
                   <div
                     key={idx}
-                    className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-slate-700 transition-colors flex items-center justify-between gap-3 group"
+                    className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 hover:border-slate-300 transition-colors flex items-center justify-between gap-3 group"
                   >
-                    <p className="text-xs text-white leading-relaxed">{tagline}</p>
+                    <p className="text-xs text-slate-800 leading-relaxed">{tagline}</p>
                     <button
                       onClick={() => handleCopyTagline(tagline, idx)}
                       title="Copy &amp; apply tagline"
-                      className="px-2.5 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg flex items-center gap-1 shrink-0 transition-colors font-medium"
+                      className="px-2.5 py-1 text-xs bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg flex items-center gap-1 shrink-0 transition-colors font-medium cursor-pointer shadow-2xs"
                     >
                       {copiedIndex === idx ? (
                         <>
-                          <Check className="w-3 h-3 text-emerald-400" />
-                          <span className="text-emerald-400">Applied</span>
+                          <Check className="w-3 h-3 text-emerald-600" />
+                          <span className="text-emerald-700">Applied</span>
                         </>
                       ) : (
                         <>

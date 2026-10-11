@@ -111,26 +111,26 @@ export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({ onClos
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 sm:p-7 space-y-5 max-h-[92vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="relative w-full max-w-xl bg-white border border-slate-200/90 rounded-2xl shadow-xl p-6 sm:p-7 space-y-5 max-h-[92vh] overflow-y-auto text-slate-900">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
         >
           <X className="w-4 h-4" />
         </button>
 
         {/* Header */}
         <div>
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-400 uppercase tracking-wider">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 uppercase tracking-wider">
             <Lock className="w-3.5 h-3.5" />
             <span>Internal Security &amp; Admin Command Vault</span>
           </div>
-          <h2 className="text-xl font-bold text-white mt-1">
+          <h2 className="text-xl font-bold text-slate-900 mt-1">
             Admin Vault
           </h2>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-500 mt-0.5">
             Internal merchant treasury &amp; Google OAuth 2.0 configuration.
           </p>
         </div>
@@ -138,13 +138,13 @@ export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({ onClos
         {!isUnlocked ? (
           /* Locked State - PIN Challenge */
           <div className="space-y-4 pt-2">
-            <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 text-center space-y-3">
-              <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center justify-center mx-auto">
+            <div className="p-6 rounded-xl bg-slate-50 border border-slate-200 text-center space-y-3">
+              <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center mx-auto">
                 <ShieldAlert className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-white">Administrator Access Required</h3>
-                <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
+                <h3 className="text-sm font-bold text-slate-900">Administrator Access Required</h3>
+                <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
                   Enter your master security PIN to access the treasury &amp; OAuth settings.
                 </p>
               </div>
@@ -158,15 +158,15 @@ export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({ onClos
                     value={enteredPin}
                     onChange={(e) => setEnteredPin(e.target.value)}
                     placeholder="Enter Master Security PIN"
-                    className="w-full max-w-xs mx-auto text-center bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 font-mono text-base text-white tracking-widest focus:outline-none focus:border-amber-400"
+                    className="w-full max-w-xs mx-auto text-center bg-white border border-slate-300 rounded-xl px-4 py-2.5 font-mono text-base text-slate-900 tracking-widest focus:outline-none focus:border-blue-600"
                   />
                   <div className="text-[10px] text-slate-500">
-                    Default Master PIN: <span className="font-mono text-slate-400 font-bold">888888</span>
+                    Default Master PIN: <span className="font-mono text-slate-700 font-bold">888888</span>
                   </div>
                 </div>
 
                 {pinError && (
-                  <div className="text-xs text-rose-400 flex items-center justify-center gap-1.5">
+                  <div className="text-xs text-rose-600 flex items-center justify-center gap-1.5">
                     <AlertCircle className="w-3.5 h-3.5" />
                     <span>{pinError}</span>
                   </div>
@@ -174,7 +174,7 @@ export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({ onClos
 
                 <button
                   type="submit"
-                  className="w-full max-w-xs py-2.5 text-xs font-bold text-slate-950 bg-amber-400 hover:bg-amber-300 rounded-xl shadow-lg shadow-amber-400/20 transition-all"
+                  className="w-full max-w-xs py-2.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-all cursor-pointer"
                 >
                   Unlock Vault
                 </button>
@@ -185,14 +185,14 @@ export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({ onClos
           /* Unlocked State - Tab Navigation */
           <div className="space-y-5">
             {/* Vault Tabs */}
-            <div className="grid grid-cols-2 gap-1 p-1 bg-slate-950 rounded-xl border border-slate-800 text-xs">
+            <div className="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs">
               <button
                 type="button"
                 onClick={() => setAdminTab('wallets')}
-                className={`py-2 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 ${
+                className={`py-2 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   adminTab === 'wallets'
-                    ? 'bg-slate-800 text-amber-400 shadow-sm'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-white text-blue-600 shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <Wallet className="w-3.5 h-3.5" />
@@ -202,10 +202,10 @@ export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({ onClos
               <button
                 type="button"
                 onClick={() => setAdminTab('google')}
-                className={`py-2 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 ${
+                className={`py-2 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   adminTab === 'google'
-                    ? 'bg-slate-800 text-indigo-400 shadow-sm'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-white text-blue-600 shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <KeyRound className="w-3.5 h-3.5" />
@@ -216,39 +216,39 @@ export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({ onClos
             {/* TAB 1: WALLETS */}
             {adminTab === 'wallets' && (
               <form onSubmit={handleSaveWallets} className="space-y-4">
-                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-                  <div className="text-xs font-bold text-white flex items-center justify-between">
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                  <div className="text-xs font-bold text-slate-900 flex items-center justify-between">
                     <span>Anti-Replay Attack Registry</span>
-                    <span className="font-mono text-emerald-400 font-bold">{redeemedCount} TXs Locked</span>
+                    <span className="font-mono text-emerald-600 font-bold">{redeemedCount} TXs Locked</span>
                   </div>
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-[11px] text-slate-500">
                     Each blockchain transaction hash is permanently verified against double-spending.
                   </p>
                 </div>
 
                 {errorMsg && (
-                  <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-800 text-xs text-rose-300 flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
                     <span>{errorMsg}</span>
                   </div>
                 )}
 
                 {savedSuccess && (
-                  <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-800 text-xs text-emerald-300 flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+                  <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-700 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
                     <span>Settings successfully saved!</span>
                   </div>
                 )}
 
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-slate-300">
+                    <label className="text-xs font-semibold text-slate-700">
                       BNB Smart Chain (BEP-20) Merchant Wallet
                     </label>
                     <button
                       type="button"
                       onClick={() => setShowAddress(!showAddress)}
-                      className="text-[11px] text-slate-400 hover:text-slate-200 flex items-center gap-1"
+                      className="text-[11px] text-slate-500 hover:text-slate-700 flex items-center gap-1 cursor-pointer"
                     >
                       {showAddress ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                       <span>{showAddress ? 'Hide' : 'Reveal'}</span>
@@ -260,41 +260,41 @@ export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({ onClos
                     value={bscAddress}
                     onChange={(e) => setBscAddress(e.target.value)}
                     placeholder="0x..."
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs font-mono text-white focus:outline-none focus:border-amber-400"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:border-blue-600"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-300">Polygon (ERC-20 USDT/USDC)</label>
+                  <label className="text-xs font-semibold text-slate-700">Polygon (ERC-20 USDT/USDC)</label>
                   <input
                     type={showAddress ? 'text' : 'password'}
                     value={polygonAddress}
                     onChange={(e) => setPolygonAddress(e.target.value)}
                     placeholder="0x..."
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs font-mono text-white focus:outline-none focus:border-amber-400"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:border-blue-600"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-300">Solana (SPL USDC) Address</label>
+                  <label className="text-xs font-semibold text-slate-700">Solana (SPL USDC) Address</label>
                   <input
                     type={showAddress ? 'text' : 'password'}
                     value={solanaAddress}
                     onChange={(e) => setSolanaAddress(e.target.value)}
                     placeholder="Solana Base58 address"
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs font-mono text-white focus:outline-none focus:border-amber-400"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:border-blue-600"
                   />
                 </div>
 
-                <div className="pt-2 border-t border-slate-800 space-y-1">
-                  <label className="text-xs font-semibold text-slate-300">Change Master PIN (Optional)</label>
+                <div className="pt-2 border-t border-slate-200 space-y-1">
+                  <label className="text-xs font-semibold text-slate-700">Change Master PIN (Optional)</label>
                   <input
                     type="password"
                     maxLength={12}
                     value={newPin}
                     onChange={(e) => setNewPin(e.target.value)}
                     placeholder="Enter new 6+ digit PIN"
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs font-mono text-white focus:outline-none focus:border-amber-400"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:border-blue-600"
                   />
                 </div>
 
@@ -302,13 +302,13 @@ export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({ onClos
                   <button
                     type="button"
                     onClick={onClose}
-                    className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white"
+                    className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 cursor-pointer"
                   >
                     Close
                   </button>
                   <button
                     type="submit"
-                    className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-slate-950 bg-amber-400 hover:bg-amber-300 rounded-xl shadow-md transition-all"
+                    className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-all cursor-pointer"
                   >
                     <Save className="w-3.5 h-3.5" />
                     <span>Save Treasury Wallets</span>
@@ -320,34 +320,34 @@ export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({ onClos
             {/* TAB 2: GOOGLE OAUTH CONFIGURATION */}
             {adminTab === 'google' && (
               <form onSubmit={handleSaveGoogleConfig} className="space-y-4">
-                <div className="p-3.5 rounded-xl bg-indigo-950/40 border border-indigo-500/30 space-y-1.5">
-                  <div className="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 space-y-1.5">
+                  <div className="text-xs font-bold text-blue-900 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-blue-600" />
                     <span>Google Identity Services (GIS) Web Client</span>
                   </div>
-                  <p className="text-[11px] text-indigo-200/80 leading-relaxed">
+                  <p className="text-[11px] text-blue-800 leading-relaxed">
                     Configure your Google OAuth 2.0 Web Client ID to power the authentic Google Account Chooser popup on <strong>adstoto.com</strong>.
                   </p>
                 </div>
 
                 {googleSavedSuccess && (
-                  <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-800 text-xs text-emerald-300 flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-700 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                     <span>Google Client ID saved successfully!</span>
                   </div>
                 )}
 
-                <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 space-y-1.5">
-                  <div className="font-bold text-white">How to get your Google Client ID:</div>
-                  <div>1. Open <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="text-indigo-400 underline inline-flex items-center gap-1">Google Cloud Credentials <ExternalLink className="w-3 h-3" /></a></div>
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 space-y-1.5">
+                  <div className="font-bold text-slate-900">How to get your Google Client ID:</div>
+                  <div>1. Open <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline inline-flex items-center gap-1">Google Cloud Credentials <ExternalLink className="w-3 h-3" /></a></div>
                   <div>2. Click <strong>+ Create Credentials &rarr; OAuth client ID</strong></div>
                   <div>3. Application type: <strong>Web application</strong></div>
-                  <div>4. Authorized JavaScript origins: <span className="font-mono text-amber-400">https://www.adstoto.com</span> and <span className="font-mono text-amber-400">https://adstoto.com</span></div>
+                  <div>4. Authorized JavaScript origins: <span className="font-mono text-slate-900 bg-slate-200 px-1 py-0.5 rounded">https://www.adstoto.com</span> and <span className="font-mono text-slate-900 bg-slate-200 px-1 py-0.5 rounded">https://adstoto.com</span></div>
                   <div>5. Copy and paste the generated <strong>Client ID</strong> below:</div>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-300">
+                  <label className="text-xs font-semibold text-slate-700">
                     OAuth 2.0 Web Client ID
                   </label>
                   <input
@@ -356,7 +356,7 @@ export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({ onClos
                     value={googleClientId}
                     onChange={(e) => setGoogleClientIdState(e.target.value)}
                     placeholder="1234567890-abcdef.apps.googleusercontent.com"
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-indigo-400"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-900 focus:outline-none focus:border-blue-600"
                   />
                 </div>
 
@@ -364,13 +364,13 @@ export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({ onClos
                   <button
                     type="button"
                     onClick={onClose}
-                    className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white"
+                    className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 cursor-pointer"
                   >
                     Close
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md flex items-center gap-1.5"
+                    className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
                   >
                     <Save className="w-3.5 h-3.5" />
                     <span>Save Google Client ID</span>

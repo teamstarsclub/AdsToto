@@ -13,15 +13,25 @@ export interface UserProfile {
   emailVerifiedAt?: string;
   authProvider?: 'google' | 'web3' | 'custom';
   avatarUrl?: string;
+  status?: 'active' | 'suspended';
+  totalSpent?: number;
+  activeAdsCount?: number;
+  lastActiveAt?: string;
+  role?: 'admin' | 'advertiser';
 }
 
 export interface AuthState {
   user: UserProfile | null;
   isAuthenticated: boolean;
+  allUsers: UserProfile[];
   signInWithGoogle: (profile?: { name?: string; email?: string; picture?: string }) => Promise<{ success: boolean; message?: string }>;
   connectWallet: (address: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
   updateProfile: (updates: Partial<UserProfile>) => void;
+  deleteUser: (id: string) => void;
+  updateUserTier: (id: string, tier: 'Starter Advertiser' | 'Growth Marketer' | 'Apex Partner') => void;
+  toggleUserStatus: (id: string) => void;
+  addAdminUser: (userData: Partial<UserProfile>) => void;
   login?: (email: string, password?: string) => Promise<{ success: boolean; message?: string }>;
   signup?: (data: { name: string; email: string; brandName: string; websiteUrl?: string; password?: string }) => Promise<{ success: boolean; message?: string }>;
   verifySignupEmail?: (email: string, code: string) => Promise<{ success: boolean; message?: string }>;

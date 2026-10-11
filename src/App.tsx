@@ -8,6 +8,7 @@ import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { MyCampaignsView } from './components/MyCampaignsView';
 import { AutoBidderPanel } from './components/AutoBidderPanel';
 import { AiIntelligencePanel } from './components/AiIntelligencePanel';
+import { AdminDashboardView } from './components/AdminDashboardView';
 import { OutbidModal } from './components/OutbidModal';
 import { PickAFightModal } from './components/PickAFightModal';
 import { CampaignModal } from './components/CampaignModal';
@@ -16,7 +17,7 @@ import { UserAccountModal } from './components/UserAccountModal';
 import { PayoutSettingsModal } from './components/PayoutSettingsModal';
 import { CryptoPaymentModal } from './components/CryptoPaymentModal';
 import { AdCampaign } from './types/ad';
-import { HelpCircle, ChevronDown, ChevronUp, User } from 'lucide-react';
+import { HelpCircle, ChevronDown, ChevronUp, User, Shield } from 'lucide-react';
 
 function FaqSection() {
   const [openIdx, setOpenIdx] = useState<number | null>(null);
@@ -41,16 +42,16 @@ function FaqSection() {
   ];
 
   return (
-    <section className="pt-8 border-t border-slate-800/80 space-y-4">
+    <section className="pt-8 border-t border-slate-200 space-y-4">
       <div>
-        <div className="flex items-center gap-1.5 text-xs text-indigo-400 font-semibold uppercase tracking-wider">
+        <div className="flex items-center gap-1.5 text-xs text-blue-600 font-semibold uppercase tracking-wider">
           <HelpCircle className="w-3.5 h-3.5" />
           <span>Transparent Digital Advertising Exchange</span>
         </div>
-        <h2 className="text-lg font-bold text-white tracking-tight mt-1">
+        <h2 className="text-lg font-bold text-slate-900 tracking-tight mt-1">
           Frequently Asked Questions
         </h2>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-slate-500">
           Everything you need to know about pay-to-rank advertising on adstoto.com
         </p>
       </div>
@@ -61,22 +62,22 @@ function FaqSection() {
           return (
             <div
               key={idx}
-              className="rounded-xl border border-slate-800 bg-slate-900/60 overflow-hidden transition-colors"
+              className="rounded-xl border border-slate-200 bg-white overflow-hidden transition-colors shadow-2xs"
             >
               <button
                 onClick={() => setOpenIdx(isOpen ? null : idx)}
-                className="w-full flex items-center justify-between p-4 text-left text-xs font-semibold text-white hover:text-indigo-300 transition-colors"
+                className="w-full flex items-center justify-between p-4 text-left text-xs font-semibold text-slate-900 hover:text-blue-600 transition-colors cursor-pointer"
               >
                 <span>{faq.q}</span>
                 {isOpen ? (
-                  <ChevronUp className="w-4 h-4 text-slate-400 shrink-0 ml-2" />
+                  <ChevronUp className="w-4 h-4 text-slate-500 shrink-0 ml-2" />
                 ) : (
-                  <ChevronDown className="w-4 h-4 text-slate-400 shrink-0 ml-2" />
+                  <ChevronDown className="w-4 h-4 text-slate-500 shrink-0 ml-2" />
                 )}
               </button>
 
               {isOpen && (
-                <div className="px-4 pb-4 text-xs text-slate-300 leading-relaxed border-t border-slate-800/60 pt-3">
+                <div className="px-4 pb-4 text-xs text-slate-600 leading-relaxed border-t border-slate-100 pt-3">
                   {faq.a}
                 </div>
               )}
@@ -90,10 +91,10 @@ function FaqSection() {
 
 function MainApp() {
   const { campaigns, recordClick, outbidCampaign } = useAds();
-  const { user } = useAuth();
+  const { user, allUsers } = useAuth();
 
   // Navigation tab state
-  const [activeTab, setActiveTab] = useState<'leaderboard' | 'analytics' | 'my-campaigns' | 'autobid' | 'ai-intel'>('leaderboard');
+  const [activeTab, setActiveTab] = useState<'leaderboard' | 'analytics' | 'my-campaigns' | 'autobid' | 'ai-intel' | 'admin'>('leaderboard');
 
   // Modals state
   const [outbidTarget, setOutbidTarget] = useState<AdCampaign | null>(null);
@@ -122,7 +123,7 @@ function MainApp() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0b0f17] text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
       {/* 3-zone Header with User Account & Auth Integration */}
       <Navbar
         activeTab={activeTab}
@@ -187,65 +188,80 @@ function MainApp() {
             }}
           />
         )}
+
+        {/* SaaS Operations Admin Dashboard */}
+        {activeTab === 'admin' && (
+          <AdminDashboardView onOpenCreateAd={handleOpenNewCampaign} />
+        )}
       </main>
 
-      {/* Clean Footer */}
-      <footer className="border-t border-slate-800/80 bg-slate-950/60 py-8 px-4 sm:px-6 lg:px-8 text-xs text-slate-400 mt-auto">
+      {/* Clean Modern Pro Footer */}
+      <footer className="border-t border-slate-200 bg-white py-8 px-4 sm:px-6 lg:px-8 text-xs text-slate-500 mt-auto">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-white tracking-tight">AdsToto</span>
+            <span className="font-bold text-slate-900 tracking-tight">AdsToto</span>
             <span aria-hidden="true">·</span>
-            <span className="font-mono text-slate-400">adstoto.com</span>
+            <span className="font-mono text-slate-500">adstoto.com</span>
             <span aria-hidden="true">·</span>
-            <span>Real-Time Pay-to-Rank Digital Advertising Exchange</span>
+            <span className="text-slate-500">Real-Time Pay-to-Rank Digital Advertising Exchange</span>
           </div>
 
-          <div className="flex items-center gap-4 text-xs font-medium">
+          <div className="flex items-center gap-4 text-xs font-medium flex-wrap">
             <button
               onClick={() => setActiveTab('leaderboard')}
-              className="hover:text-slate-200 transition-colors"
+              className="text-slate-600 hover:text-slate-900 transition-colors"
             >
               Leaderboard
             </button>
             <button
               onClick={() => setActiveTab('my-campaigns')}
-              className="hover:text-slate-200 transition-colors"
+              className="text-slate-600 hover:text-slate-900 transition-colors"
             >
               My Ads &amp; Numbers
             </button>
             <button
               onClick={() => setActiveTab('analytics')}
-              className="hover:text-slate-200 transition-colors"
+              className="text-slate-600 hover:text-slate-900 transition-colors"
             >
               Analytics &amp; ROI
             </button>
             <button
               onClick={() => setActiveTab('autobid')}
-              className="hover:text-slate-200 transition-colors"
+              className="text-slate-600 hover:text-slate-900 transition-colors"
             >
               Auto-Bid Shield
+            </button>
+            <button
+              onClick={() => setActiveTab('admin')}
+              className="text-slate-700 hover:text-blue-600 bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1.5"
+            >
+              <Shield className="w-3.5 h-3.5 text-blue-600" />
+              <span>Admin Dashboard</span>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 font-bold">
+                {allUsers.length} Users
+              </span>
             </button>
             {user ? (
               <button
                 onClick={() => setIsAccountModalOpen(true)}
-                className="hover:text-amber-400 text-slate-300 font-semibold transition-colors flex items-center gap-1"
+                className="text-slate-700 hover:text-blue-600 font-medium transition-colors flex items-center gap-1"
               >
-                <User className="w-3.5 h-3.5 text-amber-400" />
+                <User className="w-3.5 h-3.5 text-slate-500" />
                 <span>Account Hub</span>
               </button>
             ) : (
               <button
                 onClick={() => setIsAuthModalOpen(true)}
-                className="hover:text-amber-400 text-slate-300 font-semibold transition-colors"
+                className="text-slate-700 hover:text-blue-600 font-medium transition-colors"
               >
                 Sign In
               </button>
             )}
             <button
               onClick={() => setIsPayoutModalOpen(true)}
-              className="hover:text-emerald-400 text-slate-400 transition-colors"
+              className="text-slate-500 hover:text-slate-700 transition-colors"
             >
-              Admin Vault
+              Security Vault
             </button>
           </div>
         </div>

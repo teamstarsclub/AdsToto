@@ -135,53 +135,53 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6 my-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
+      <div className="relative w-full max-w-2xl bg-white border border-slate-200/90 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6 my-8 text-slate-900">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
         >
           <X className="w-4 h-4" />
         </button>
 
         {/* Title */}
         <div>
-          <h2 className="text-xl font-bold text-white tracking-tight">
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">
             {initialCampaign ? 'Edit Ad Campaign Details' : 'Launch New Digital Ad Campaign'}
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             Deploy your product creative directly to the adstoto.com pay-to-rank exchange.
           </p>
         </div>
 
         {/* Live Creative Card Preview */}
-        <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
-          <div className="flex items-center justify-between text-xs text-slate-400">
-            <span className="flex items-center gap-1 font-semibold text-indigo-400">
+        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+          <div className="flex items-center justify-between text-xs text-slate-500">
+            <span className="flex items-center gap-1 font-semibold text-blue-600">
               <Eye className="w-3.5 h-3.5" />
               <span>Live Creative Preview on adstoto.com</span>
             </span>
-            <span className="font-mono text-emerald-400 font-bold" data-tabular>${bidAmount} Active Bid</span>
+            <span className="font-mono text-emerald-600 font-bold" data-tabular>${bidAmount} Active Bid</span>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex items-start gap-3">
-            <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${iconBg} flex items-center justify-center text-white text-base font-bold font-mono shadow ring-1 ring-white/20 shrink-0`}>
+          <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs flex items-start gap-3">
+            <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${iconBg} flex items-center justify-center text-white text-base font-bold font-mono shadow-xs shrink-0`}>
               {iconSymbol || 'AD'}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-white text-sm truncate">
+                <span className="font-bold text-slate-900 text-sm truncate">
                   {title || 'Your Product Name'}
                 </span>
-                <span className="text-[10px] font-mono text-slate-400 uppercase">
+                <span className="text-[10px] font-mono text-slate-500 uppercase">
                   {category}
                 </span>
               </div>
-              <p className="text-xs text-slate-300 line-clamp-1 mt-0.5">
+              <p className="text-xs text-slate-600 line-clamp-1 mt-0.5">
                 {tagline || 'Snappy value proposition and call to action headline...'}
               </p>
-              <div className="text-[11px] text-indigo-400 font-mono mt-1">
+              <div className="text-[11px] text-blue-600 font-mono mt-1">
                 {displayUrl || 'yourdomain.com'}
               </div>
             </div>
@@ -192,24 +192,24 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Title */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">Product / Brand Name</label>
+              <label className="text-xs font-semibold text-slate-700">Product / Brand Name</label>
               <input
                 type="text"
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g. NextPulse Analytics"
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-2xs"
               />
             </div>
 
             {/* Category */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">Category Vertical</label>
+              <label className="text-xs font-semibold text-slate-700">Category Vertical</label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as CategoryType)}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 cursor-pointer"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-2xs cursor-pointer"
               >
                 <option value="ai">AI Tools &amp; Autonomous Agents</option>
                 <option value="saas">SaaS &amp; Cloud Software</option>
@@ -223,7 +223,7 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({
 
           {/* Tagline */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-300">Ad Tagline / Value Proposition</label>
+            <label className="text-xs font-semibold text-slate-700">Ad Tagline / Value Proposition</label>
             <input
               type="text"
               required
@@ -231,34 +231,34 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({
               value={tagline}
               onChange={(e) => setTagline(e.target.value)}
               placeholder="e.g. Instant AI code refactoring for high-velocity software engineering teams"
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+              className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-2xs"
             />
-            <div className="text-[10px] text-slate-500 text-right">{tagline.length}/120 characters</div>
+            <div className="text-[10px] text-slate-400 text-right">{tagline.length}/120 characters</div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Destination URL */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">Target Destination URL</label>
+              <label className="text-xs font-semibold text-slate-700">Target Destination URL</label>
               <input
                 type="url"
                 required
                 value={destinationUrl}
                 onChange={(e) => setDestinationUrl(e.target.value)}
                 placeholder="https://yourproduct.com"
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-2xs"
               />
             </div>
 
             {/* Display URL */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">Display Clean Domain</label>
+              <label className="text-xs font-semibold text-slate-700">Display Clean Domain</label>
               <input
                 type="text"
                 value={displayUrl}
                 onChange={(e) => setDisplayUrl(e.target.value)}
                 placeholder="yourproduct.com"
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-2xs"
               />
             </div>
           </div>
@@ -266,7 +266,7 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({
           {/* Bid Amount & Auto-Bid Shield */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">Initial Active Bid ($ USD)</label>
+              <label className="text-xs font-semibold text-slate-700">Initial Active Bid ($ USD)</label>
               <div className="relative">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs">$</span>
                 <input
@@ -281,23 +281,23 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({
                       setMaxBudget(val * 2);
                     }
                   }}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-8 pr-3 py-2 text-xs font-mono font-bold text-white focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-white border border-slate-300 rounded-xl pl-8 pr-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-2xs"
                   data-tabular
                 />
               </div>
-              <p className="text-[10px] text-slate-500">Determines your starting rank position on the leaderboard</p>
+              <p className="text-[10px] text-slate-400">Determines your starting rank position on the leaderboard</p>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">Brand Color Accent</label>
+              <label className="text-xs font-semibold text-slate-700">Brand Color Accent</label>
               <div className="flex gap-2 pt-1">
                 {bgPresets.map((preset) => (
                   <button
                     key={preset.value}
                     type="button"
                     onClick={() => setIconBg(preset.value)}
-                    className={`w-7 h-7 rounded-lg bg-gradient-to-br ${preset.value} ring-offset-2 ring-offset-slate-900 transition-all ${
-                      iconBg === preset.value ? 'ring-2 ring-white scale-110' : 'opacity-70 hover:opacity-100'
+                    className={`w-7 h-7 rounded-lg bg-gradient-to-br ${preset.value} ring-offset-2 ring-offset-white transition-all ${
+                      iconBg === preset.value ? 'ring-2 ring-blue-600 scale-110' : 'opacity-70 hover:opacity-100'
                     }`}
                   />
                 ))}
@@ -306,28 +306,28 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({
           </div>
 
           {/* Auto-Bid Shield Settings */}
-          <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-3">
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <span className="text-xs font-semibold text-white">Auto-Bid Defense Guardrail</span>
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <span className="text-xs font-semibold text-slate-900">Auto-Bid Defense Guardrail</span>
               </div>
               <input
                 type="checkbox"
                 checked={autoBidEnabled}
                 onChange={(e) => setAutoBidEnabled(e.target.checked)}
-                className="w-4 h-4 rounded text-indigo-600 accent-indigo-600 bg-slate-900 border-slate-700 cursor-pointer"
+                className="w-4 h-4 rounded text-blue-600 accent-blue-600 bg-white border-slate-300 cursor-pointer"
               />
             </div>
 
             {autoBidEnabled && (
               <div className="grid grid-cols-2 gap-3 pt-1">
                 <div>
-                  <label className="text-[11px] text-slate-400">Target Rank to Hold</label>
+                  <label className="text-[11px] text-slate-600">Target Rank to Hold</label>
                   <select
                     value={targetRank}
                     onChange={(e) => setTargetRank(Number(e.target.value) as 1 | 3 | 5)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white mt-1 cursor-pointer"
+                    className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 mt-1 cursor-pointer focus:outline-none focus:border-blue-600"
                   >
                     <option value={1}>Rank #1 Crown</option>
                     <option value={3}>Top 3 Leaderboard</option>
@@ -336,71 +336,71 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="text-[11px] text-slate-400">Max Budget Ceiling ($)</label>
+                  <label className="text-[11px] text-slate-600">Max Budget Ceiling ($)</label>
                   <input
                     type="number"
                     min={1}
                     step="any"
                     value={maxBudget}
                     onChange={(e) => setMaxBudget(Number(e.target.value))}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono mt-1"
+                    className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 font-mono mt-1 focus:outline-none focus:border-blue-600"
                     data-tabular
                   />
-                  <p className="text-[10px] text-slate-500 mt-0.5">Budget limit for automatic defensive counter-bids</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Budget limit for automatic defensive counter-bids</p>
                 </div>
               </div>
             )}
           </div>
 
           {/* Organic Google SEO Accordion */}
-          <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-3">
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
             <button
               type="button"
               onClick={() => setShowSeoFields(!showSeoFields)}
-              className="w-full flex items-center justify-between text-left text-xs font-semibold text-slate-300 hover:text-white"
+              className="w-full flex items-center justify-between text-left text-xs font-semibold text-slate-700 hover:text-slate-900 cursor-pointer"
             >
-              <span className="flex items-center gap-1.5 text-emerald-400">
+              <span className="flex items-center gap-1.5 text-emerald-700 font-medium">
                 <span>✦</span>
                 <span>Organic Google SEO &amp; SERP Snippet Optimization</span>
               </span>
-              <span className="text-[11px] text-slate-400 font-normal">
+              <span className="text-[11px] text-slate-500 font-normal">
                 {showSeoFields ? 'Hide SEO' : 'Configure SEO'}
               </span>
             </button>
 
             {showSeoFields && (
-              <div className="space-y-3 pt-2 border-t border-slate-800/80">
+              <div className="space-y-3 pt-2 border-t border-slate-200">
                 <div className="space-y-1">
-                  <label className="text-[11px] font-semibold text-slate-400">Target Organic Keywords (Comma separated)</label>
+                  <label className="text-[11px] font-semibold text-slate-600">Target Organic Keywords (Comma separated)</label>
                   <input
                     type="text"
                     value={targetKeywords}
                     onChange={(e) => setTargetKeywords(e.target.value)}
                     placeholder="e.g. buy advertising space, best ai tools, saas promo"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white"
+                    className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600"
                   />
-                  <p className="text-[10px] text-slate-500">Targets specific search queries in Google indexing</p>
+                  <p className="text-[10px] text-slate-400">Targets specific search queries in Google indexing</p>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[11px] font-semibold text-slate-400">Custom Google SERP Meta Title</label>
+                  <label className="text-[11px] font-semibold text-slate-600">Custom Google SERP Meta Title</label>
                   <input
                     type="text"
                     value={metaTitle}
                     onChange={(e) => setMetaTitle(e.target.value)}
                     placeholder="e.g. CogniFlow AI — Autonomous Dev Workflow Orchestrator | AdsToto"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white"
+                    className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[11px] font-semibold text-slate-400">Google Search Meta Description</label>
+                  <label className="text-[11px] font-semibold text-slate-600">Google Search Meta Description</label>
                   <textarea
                     rows={2}
                     value={metaDescription}
                     onChange={(e) => setMetaDescription(e.target.value)}
                     placeholder="Compelling 1-2 sentence description shown in Google search results snippets..."
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white"
+                    className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600"
                   />
                 </div>
               </div>
@@ -408,17 +408,17 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({
           </div>
 
           {/* Action CTAs */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white bg-slate-800 rounded-xl transition-colors"
+              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 rounded-xl transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex items-center gap-1.5 px-6 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.01]"
+              className="flex items-center gap-1.5 px-6 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-all cursor-pointer"
             >
               {initialCampaign ? (
                 <>

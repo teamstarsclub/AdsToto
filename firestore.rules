@@ -1,0 +1,22 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Connection test document
+    match /test/{docId} {
+      allow read, write: if true;
+    }
+
+    // User accounts collection
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null || request.resource.data.id == userId;
+    }
+
+    // Ad Campaigns collection (Public leaderboard read)
+    match /campaigns/{campaignId} {
+      allow read: if true;
+      allow write: if true;
+    }
+  }
+}

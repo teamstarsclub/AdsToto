@@ -65,15 +65,15 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
     <div className="space-y-6">
       {/* Real-time Activity Ticker (Anti-slop, clean unboxed alerts) */}
       {activityFeed.length > 0 && (
-        <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs overflow-hidden">
-          <div className="flex items-center gap-1.5 text-amber-400 font-semibold shrink-0">
-            <Flame className="w-3.5 h-3.5 fill-amber-400" />
-            <span className="uppercase tracking-wider">Live War Feed:</span>
+        <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white border border-slate-200/90 shadow-2xs text-xs overflow-hidden">
+          <div className="flex items-center gap-1.5 text-blue-600 font-semibold shrink-0">
+            <Flame className="w-3.5 h-3.5 fill-blue-600" />
+            <span className="uppercase tracking-wider">Live Activity:</span>
           </div>
-          <div className="truncate text-slate-300">
+          <div className="truncate text-slate-700">
             {activityFeed[0].message}
           </div>
-          <div className="hidden sm:block ml-auto text-[11px] text-slate-500 font-mono shrink-0">
+          <div className="hidden sm:block ml-auto text-[11px] text-slate-400 font-mono shrink-0">
             Just now
           </div>
         </div>
@@ -82,15 +82,15 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
       {/* Filter and Search Controls */}
       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
         {/* Category Segmented Buttons */}
-        <div className="flex items-center gap-1 p-1 bg-slate-900 rounded-xl border border-slate-800 overflow-x-auto">
+        <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200/80 overflow-x-auto">
           {categories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setCategoryFilter(cat.id)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap ${
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap cursor-pointer ${
                 categoryFilter === cat.id
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-white text-slate-900 shadow-2xs font-semibold'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
               }`}
             >
               {cat.label}
@@ -107,14 +107,14 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search campaigns, URLs..."
-              className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+              className="w-full bg-white border border-slate-300 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors shadow-2xs"
             />
           </div>
 
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
-            className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer"
+            className="bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-blue-500 cursor-pointer shadow-2xs"
           >
             <option value="rank">Sort: Pay-to-Rank ($)</option>
             <option value="clicks">Sort: Most Clicks</option>
@@ -124,10 +124,10 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
       </div>
 
       {/* Main Competitive Table */}
-      <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur-sm">
+      <div className="overflow-x-auto rounded-2xl border border-slate-200/90 bg-white shadow-2xs">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-slate-800 text-[11px] uppercase tracking-wider text-slate-400 font-semibold bg-slate-900/80">
+            <tr className="border-b border-slate-200 text-[11px] uppercase tracking-wider text-slate-500 font-semibold bg-slate-50/80">
               <th className="py-3 px-4 w-16 text-center">Rank</th>
               <th className="py-3 px-4">Campaign &amp; Offer</th>
               <th className="py-3 px-4 hidden md:table-cell">Category</th>
@@ -137,15 +137,15 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
               <th className="py-3 px-4 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/60">
+          <tbody className="divide-y divide-slate-100">
             {sortedCampaigns.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-12 text-center text-slate-400 text-sm">
+                <td colSpan={7} className="py-12 text-center text-slate-500 text-sm">
                   No advertising campaigns found matching your search.
                   <div className="mt-3">
                     <button
                       onClick={onOpenNewCampaign}
-                      className="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-500 transition-colors"
+                      className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-2xs"
                     >
                       Launch a Campaign in this Niche
                     </button>
@@ -165,32 +165,36 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
                 return (
                   <tr 
                     key={camp.id}
-                    className={`group hover:bg-slate-800/40 transition-colors ${
-                      camp.rank === 1 ? 'bg-indigo-950/20' : camp.isUserOwned ? 'bg-indigo-900/10' : ''
+                    className={`group hover:bg-slate-50/80 transition-colors ${
+                      camp.rank === 1 ? 'bg-amber-50/30' : camp.isUserOwned ? 'bg-blue-50/30' : ''
                     }`}
                   >
                     {/* Rank + Delta */}
                     <td className="py-4 px-4 text-center">
                       <div className="flex flex-col items-center justify-center">
-                        <span className={`text-base font-bold font-mono ${
-                          camp.rank === 1 ? 'text-amber-400' : camp.rank <= 3 ? 'text-indigo-400' : 'text-slate-300'
+                        <span className={`text-sm font-bold font-mono px-2 py-0.5 rounded-md ${
+                          camp.rank === 1 
+                            ? 'bg-amber-100 text-amber-800' 
+                            : camp.rank <= 3 
+                              ? 'bg-slate-100 text-slate-800' 
+                              : 'text-slate-600'
                         }`} data-tabular>
                           #{camp.rank}
                         </span>
 
                         <div className="flex items-center text-[10px] font-mono mt-0.5">
                           {rankDelta > 0 ? (
-                            <span className="text-emerald-400 flex items-center">
+                            <span className="text-emerald-700 flex items-center font-semibold">
                               <ArrowUp className="w-2.5 h-2.5" />
                               {rankDelta}
                             </span>
                           ) : rankDelta < 0 ? (
-                            <span className="text-rose-400 flex items-center">
+                            <span className="text-rose-600 flex items-center font-semibold">
                               <ArrowDown className="w-2.5 h-2.5" />
                               {Math.abs(rankDelta)}
                             </span>
                           ) : (
-                            <span className="text-slate-600 flex items-center">
+                            <span className="text-slate-400 flex items-center">
                               <Minus className="w-2.5 h-2.5" />
                             </span>
                           )}
@@ -201,24 +205,24 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
                     {/* Campaign Identity & Creative */}
                     <td className="py-4 px-4">
                       <div className="flex items-start gap-3">
-                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${camp.iconBg} flex items-center justify-center text-white text-sm font-bold font-mono shadow ring-1 ring-white/20 shrink-0 mt-0.5`}>
+                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${camp.iconBg} flex items-center justify-center text-white text-sm font-bold font-mono shadow-xs border border-white/20 shrink-0 mt-0.5`}>
                           {camp.iconSymbol}
                         </div>
 
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-semibold text-white text-sm tracking-tight hover:text-indigo-300 transition-colors">
+                            <span className="font-semibold text-slate-900 text-sm tracking-tight hover:text-blue-600 transition-colors">
                               {camp.title}
                             </span>
 
                             {camp.isUserOwned && (
-                              <span className="text-[10px] font-medium text-indigo-400 bg-indigo-950/60 border border-indigo-800/80 px-1.5 py-0.5 rounded">
+                              <span className="text-[10px] font-medium text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded">
                                 Your Campaign
                               </span>
                             )}
 
                             {camp.autoBid.enabled && (
-                              <span className="text-[10px] font-medium text-emerald-400 bg-emerald-950/40 border border-emerald-800/60 px-1.5 py-0.5 rounded">
+                              <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
                                 Auto-Bid Shield
                               </span>
                             )}
@@ -228,16 +232,16 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
                                 href={camp.paymentReceipt.explorerUrl}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="inline-flex items-center gap-1 text-[10px] font-mono text-amber-400 bg-amber-950/60 border border-amber-800/80 px-1.5 py-0.5 rounded hover:bg-amber-900/60 transition-colors"
+                                className="inline-flex items-center gap-1 text-[10px] font-mono text-slate-700 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded hover:bg-slate-200 transition-colors"
                                 title={`Verified on ${camp.paymentReceipt.network.toUpperCase()} block #${camp.paymentReceipt.blockNumber}`}
                               >
-                                <ShieldCheck className="w-3 h-3 text-amber-400" />
-                                <span>On-Chain Verified · {camp.paymentReceipt.network.toUpperCase()}</span>
+                                <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                                <span>Verified · {camp.paymentReceipt.network.toUpperCase()}</span>
                               </a>
                             )}
                           </div>
 
-                          <p className="text-xs text-slate-400 line-clamp-1 mt-0.5 max-w-lg">
+                          <p className="text-xs text-slate-600 line-clamp-1 mt-0.5 max-w-lg">
                             {camp.tagline}
                           </p>
 
@@ -247,7 +251,7 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
                               target="_blank"
                               rel="noreferrer noopener"
                               onClick={() => recordClick(camp.id)}
-                              className="text-indigo-400 hover:text-indigo-300 inline-flex items-center gap-1 transition-colors"
+                              className="text-blue-600 hover:text-blue-700 inline-flex items-center gap-1 transition-colors"
                             >
                               <span>{camp.displayUrl}</span>
                               <ExternalLink className="w-3 h-3" />
@@ -261,14 +265,14 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
 
                     {/* Category */}
                     <td className="py-4 px-4 hidden md:table-cell">
-                      <span className="text-xs text-slate-400 uppercase font-mono tracking-wider">
+                      <span className="text-xs text-slate-500 uppercase font-mono tracking-wider">
                         {camp.category}
                       </span>
                     </td>
 
                     {/* Clicks */}
                     <td className="py-4 px-4 text-right">
-                      <div className="font-mono text-sm font-bold text-white" data-tabular>
+                      <div className="font-mono text-sm font-bold text-slate-900" data-tabular>
                         {camp.clicks.toLocaleString()}
                       </div>
                       <div className="text-[11px] text-slate-500 font-mono">
@@ -278,7 +282,7 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
 
                     {/* CTR & CPC */}
                     <td className="py-4 px-4 text-right hidden sm:table-cell">
-                      <div className="font-mono text-xs font-semibold text-emerald-400" data-tabular>
+                      <div className="font-mono text-xs font-semibold text-emerald-700" data-tabular>
                         {ctr}% CTR
                       </div>
                       <div className="text-[11px] text-slate-500 font-mono" data-tabular>
@@ -288,7 +292,7 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
 
                     {/* Active Bid */}
                     <td className="py-4 px-4 text-right">
-                      <div className="font-mono text-base font-bold text-white" data-tabular>
+                      <div className="font-mono text-base font-bold text-slate-900" data-tabular>
                         ${camp.bidAmount}
                       </div>
                       <div className="text-[10px] text-slate-500 font-mono">
@@ -303,7 +307,7 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
                           <button
                             onClick={() => quickBoostBid(camp.id, 10)}
                             title="Boost bid by +$10"
-                            className="px-2.5 py-1 text-xs font-semibold text-emerald-300 bg-emerald-950/50 hover:bg-emerald-900 border border-emerald-800 rounded-lg transition-colors flex items-center gap-1"
+                            className="px-2.5 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
                           >
                             <Plus className="w-3 h-3" />
                             <span>+$10</span>
@@ -313,14 +317,14 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
                             <button
                               onClick={() => onSelectFight(camp)}
                               title="Compare head-to-head"
-                              className="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-slate-800 rounded-lg border border-slate-800 transition-colors"
+                              className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg border border-slate-200 transition-colors cursor-pointer"
                             >
                               <Swords className="w-3.5 h-3.5" />
                             </button>
 
                             <button
                               onClick={() => onSelectOutbid(camp)}
-                              className="flex items-center gap-1 px-3 py-1 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-sm shadow-indigo-600/30 transition-colors whitespace-nowrap"
+                              className="flex items-center gap-1 px-3 py-1 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-2xs transition-colors whitespace-nowrap cursor-pointer"
                             >
                               <Zap className="w-3 h-3 fill-white" />
                               <span>Outbid</span>

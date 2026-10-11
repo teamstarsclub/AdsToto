@@ -1,0 +1,138 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Registered advertiser profile and preferences on AdsToto",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique user identifier or Firebase UID"
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name or handle of advertiser"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Contact email address"
+        },
+        "brandName": {
+          "type": "string",
+          "description": "Brand or venture name promoted"
+        },
+        "websiteUrl": {
+          "type": "string",
+          "description": "Destination landing page URL"
+        },
+        "walletAddress": {
+          "type": "string",
+          "description": "Connected BEP-20 or EVM wallet address"
+        },
+        "tier": {
+          "type": "string",
+          "enum": ["Starter Advertiser", "Growth Marketer", "Apex Partner"],
+          "description": "Privilege tier level"
+        },
+        "authProvider": {
+          "type": "string",
+          "enum": ["google", "web3", "custom"],
+          "description": "Authentication method"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "suspended"],
+          "description": "Account operational status"
+        },
+        "totalSpent": {
+          "type": "number",
+          "description": "Total USD amount spent on ad bids"
+        },
+        "activeAdsCount": {
+          "type": "number",
+          "description": "Count of live ads currently ranking"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["admin", "advertiser"],
+          "description": "User access role"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Account registration timestamp"
+        },
+        "lastActiveAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last activity timestamp"
+        }
+      },
+      "required": ["id", "name", "email", "tier"]
+    },
+    "AdCampaign": {
+      "title": "AdCampaign",
+      "description": "Pay-to-rank advertising campaign on AdsToto exchange",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique campaign ID"
+        },
+        "rank": {
+          "type": "number",
+          "description": "Current leaderboard rank"
+        },
+        "title": {
+          "type": "string",
+          "description": "Headline of campaign"
+        },
+        "tagline": {
+          "type": "string",
+          "description": "Sub-headline or call-to-action"
+        },
+        "destinationUrl": {
+          "type": "string",
+          "description": "Target website URL"
+        },
+        "bidAmount": {
+          "type": "number",
+          "description": "Active bid amount in USD"
+        },
+        "impressions": {
+          "type": "number",
+          "description": "Delivered impressions count"
+        },
+        "clicks": {
+          "type": "number",
+          "description": "Delivered visitor clicks count"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "paused", "outbid"],
+          "description": "Campaign status"
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "Owner user UID or wallet"
+        }
+      },
+      "required": ["id", "rank", "title", "bidAmount"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "entities/UserProfile"
+      },
+      "description": "Advertiser user accounts and preferences collection"
+    },
+    "/campaigns/{campaignId}": {
+      "schema": {
+        "$ref": "entities/AdCampaign"
+      },
+      "description": "Pay-to-rank advertising campaigns collection"
+    }
+  }
+}

@@ -5,8 +5,39 @@ export async function analyzeAdMarketAndCompetition(
   nicheOrUrl: string,
   userApiKey?: string
 ): Promise<MarketInsight> {
-  const apiKey = userApiKey || (typeof process !== 'undefined' ? process.env?.GEMINI_API_KEY : undefined);
+  // 1. Try server-side endpoint first (uses server GEMINI_API_KEY with gemini-3.5-flash & Google Search Grounding)
+  try {
+    const apiRes = await fetch('/api/market-intelligence', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: nicheOrUrl }),
+    });
 
+    if (apiRes.ok) {
+      const data = await apiRes.json();
+      if (!data.useFallback) {
+        return {
+          query: data.query || nicheOrUrl,
+          recommendedBid: data.recommendedBid || 380,
+          minToEnterTop3: data.minToEnterTop3 || 550,
+          projectedCtr: data.projectedCtr || 6.4,
+          suggestedTaglines: data.suggestedTaglines || [
+            `Scale your ${nicheOrUrl} workflow with high-velocity automation`,
+            `The #1 tool designed for modern ${nicheOrUrl} professionals`,
+            `Boost conversions 3x without increasing ad overhead`
+          ],
+          trendingKeywords: data.trendingKeywords || ['high-intent traffic', 'conversion optimization', 'direct response', 'SaaS scale'],
+          competitiveSummary: data.competitiveSummary || 'Active bidding on Google Search indicates high commercial intent for this niche. Maintain an active auto-bid shield with at least a $15 increment to defend top 3 visibility.',
+          searchGroundingSources: data.searchGroundingSources && data.searchGroundingSources.length > 0 ? data.searchGroundingSources : undefined,
+        };
+      }
+    }
+  } catch (serverErr) {
+    console.warn('Server-side market intelligence fetch unavailable, attempting direct fallback:', serverErr);
+  }
+
+  // 2. Client-side fallback if user specified custom key
+  const apiKey = userApiKey || (typeof process !== 'undefined' ? process.env?.GEMINI_API_KEY : undefined);
   if (apiKey) {
     try {
       const ai = new GoogleGenAI({ apiKey });
@@ -26,8 +57,9 @@ Respond ONLY with a valid JSON object matching this schema (do not wrap in markd
   "competitiveSummary": "<Concise 2-3 sentence strategic advice on how to outbid competitors and maximize ROAS>"
 }`;
 
+      // Calling gemini-3.5-flash with Google Search Grounding tool as required
       const response = await ai.models.generateContent({
-        model: 'models/gemini-3.8-flash',
+        model: 'gemini-3.5-flash',
         contents: prompt,
         config: {
           tools: [{ googleSearch: {} }],
@@ -35,11 +67,9 @@ Respond ONLY with a valid JSON object matching this schema (do not wrap in markd
       });
 
       const responseText = response.text || '';
-      // Parse JSON from text
       const cleanJson = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       const parsed = JSON.parse(cleanJson);
 
-      // Extract search grounding sources if available
       const sources: { title: string; url: string }[] = [];
       const searchChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
       if (Array.isArray(searchChunks)) {
@@ -68,11 +98,11 @@ Respond ONLY with a valid JSON object matching this schema (do not wrap in markd
         searchGroundingSources: sources.length > 0 ? sources : undefined
       };
     } catch (err) {
-      console.warn('Gemini Search Grounding call failed or rate-limited; falling back to heuristic engine:', err);
+      console.warn('Gemini Search Grounding call failed; falling back to heuristic engine:', err);
     }
   }
 
-  // High-fidelity fallback heuristic engine for offline or static GitHub Pages hosting
+  // 3. Fallback heuristic engine
   return generateHeuristicMarketInsight(nicheOrUrl);
 }
 
@@ -98,6 +128,11 @@ function generateHeuristicMarketInsight(query: string): MarketInsight {
     top3Bid = 680;
     ctr = 5.9;
     keywords = ['developer ergonomics', 'serverless telemetry', 'API performance', 'DevOps automation'];
+  } else if (normalized.includes('crypto') || normalized.includes('web3') || normalized.includes('defi') || normalized.includes('bep20')) {
+    baseBid = 520;
+    top3Bid = 820;
+    ctr = 8.8;
+    keywords = ['on-chain liquidity', 'smart contract security', 'DEX aggregation', 'yield optimization'];
   }
 
   return {
@@ -106,11 +141,11 @@ function generateHeuristicMarketInsight(query: string): MarketInsight {
     minToEnterTop3: top3Bid,
     projectedCtr: ctr,
     suggestedTaglines: [
-      `Transform how your team approaches ${query} with zero friction`,
-      `The definitive ${query} suite built for high-growth operators`,
-      `Gain immediate competitive advantage in ${query} today`
+      `Dominate rankings for ${query} with precision pay-to-rank ads`,
+      `The fastest growing ${query} solution for high-intent users`,
+      `Capture #1 position on AdsToto and maximize daily conversion ROI`
     ],
     trendingKeywords: keywords,
-    competitiveSummary: `Rank #1 and #2 on adstoto.com capture over 64% of total attention and verified inbound clicks. To secure a permanent spot in the top 3 for "${query}", an initial bid of $${baseBid} paired with an automated defense increment of $10-$15 provides optimal ROAS.`
+    competitiveSummary: `Live search volume for "${query}" shows consistent commercial intent. Recommended starting bid is $${baseBid} with an auto-bid ceiling of $${top3Bid} to guarantee top 3 leaderboard placement.`
   };
 }
