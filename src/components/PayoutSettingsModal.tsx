@@ -160,8 +160,8 @@ export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({ onClos
                     placeholder="Enter Master Security PIN"
                     className="w-full max-w-xs mx-auto text-center bg-white border border-slate-300 rounded-xl px-4 py-2.5 font-mono text-base text-slate-900 tracking-widest focus:outline-none focus:border-blue-600"
                   />
-                  <div className="text-[10px] text-slate-500">
-                    Default Master PIN: <span className="font-mono text-slate-700 font-bold">888888</span>
+                  <div className="text-[11px] text-slate-500">
+                    Restricted to platform administrators and authorized operations staff.
                   </div>
                 </div>
 

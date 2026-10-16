@@ -91,7 +91,7 @@ function FaqSection() {
 
 function MainApp() {
   const { campaigns, recordClick, outbidCampaign } = useAds();
-  const { user, allUsers } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   // Navigation tab state
   const [activeTab, setActiveTab] = useState<'leaderboard' | 'analytics' | 'my-campaigns' | 'autobid' | 'ai-intel' | 'admin'>('leaderboard');
@@ -191,7 +191,10 @@ function MainApp() {
 
         {/* SaaS Operations Admin Dashboard */}
         {activeTab === 'admin' && (
-          <AdminDashboardView onOpenCreateAd={handleOpenNewCampaign} />
+          <AdminDashboardView 
+            onOpenCreateAd={handleOpenNewCampaign} 
+            onSwitchToUserView={() => setActiveTab('my-campaigns')}
+          />
         )}
       </main>
 
@@ -231,16 +234,33 @@ function MainApp() {
             >
               Auto-Bid Shield
             </button>
-            <button
-              onClick={() => setActiveTab('admin')}
-              className="text-slate-700 hover:text-blue-600 bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1.5"
-            >
-              <Shield className="w-3.5 h-3.5 text-blue-600" />
-              <span>Admin Dashboard</span>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 font-bold">
-                {allUsers.length} Users
-              </span>
-            </button>
+
+            {isAdmin ? (
+              <>
+                <button
+                  onClick={() => setActiveTab('admin')}
+                  className="text-purple-700 hover:text-purple-900 bg-purple-50 hover:bg-purple-100 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1.5 font-semibold"
+                >
+                  <Shield className="w-3.5 h-3.5 text-purple-600" />
+                  <span>Admin Console</span>
+                </button>
+                <button
+                  onClick={() => setIsPayoutModalOpen(true)}
+                  className="text-slate-500 hover:text-slate-700 transition-colors"
+                >
+                  Security Vault
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setActiveTab('admin')}
+                className="text-slate-400 hover:text-slate-600 text-[11px] transition-colors"
+                title="Staff Portal (Master PIN required)"
+              >
+                Staff Access
+              </button>
+            )}
+
             {user ? (
               <button
                 onClick={() => setIsAccountModalOpen(true)}
@@ -257,12 +277,6 @@ function MainApp() {
                 Sign In
               </button>
             )}
-            <button
-              onClick={() => setIsPayoutModalOpen(true)}
-              className="text-slate-500 hover:text-slate-700 transition-colors"
-            >
-              Security Vault
-            </button>
           </div>
         </div>
       </footer>

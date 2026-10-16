@@ -37,7 +37,7 @@ export const UserAccountModal: React.FC<UserAccountModalProps> = ({
   onOpenCreateAd,
   onOpenOutbid,
 }) => {
-  const { user, logout, updateProfile } = useAuth();
+  const { user, logout, updateProfile, isAdmin } = useAuth();
   const { campaigns, quickBoostBid, toggleAutoBid } = useAds();
 
   const [isEditingBrand, setIsEditingBrand] = useState(false);
@@ -121,14 +121,28 @@ export const UserAccountModal: React.FC<UserAccountModalProps> = ({
             <button
               onClick={() => {
                 onClose();
-                onNavigateTab('admin');
+                onNavigateTab('my-campaigns');
               }}
               className="p-2 text-xs font-semibold text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-colors flex items-center gap-1.5 cursor-pointer"
-              title="Open Platform Admin Operations Dashboard"
+              title="Go to My Campaigns & Telemetry"
             >
-              <Shield className="w-3.5 h-3.5 text-blue-600" />
-              <span className="hidden sm:inline">Admin Suite</span>
+              <Layers className="w-3.5 h-3.5 text-blue-600" />
+              <span className="hidden sm:inline">My Dashboard</span>
             </button>
+
+            {(user.role === 'admin' || isAdmin) && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onNavigateTab('admin');
+                }}
+                className="p-2 text-xs font-semibold text-purple-700 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 rounded-lg border border-purple-200 transition-colors flex items-center gap-1.5 cursor-pointer"
+                title="Open Platform Admin Operations Dashboard"
+              >
+                <Shield className="w-3.5 h-3.5 text-purple-600" />
+                <span className="hidden sm:inline">Admin Suite</span>
+              </button>
+            )}
 
             <button
               onClick={() => {

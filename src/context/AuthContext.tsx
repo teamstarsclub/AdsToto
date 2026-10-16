@@ -6,8 +6,10 @@ import {
   subscribeUsersFromFirestore 
 } from '../services/firestoreService';
 
-const STORAGE_KEY_AUTH = 'adstoto_auth_user_v2';
+const STORAGE_KEY_AUTH = 'adstoto_auth_user_v3';
 const STORAGE_KEY_USERS_DB = 'adstoto_registered_users_v2';
+const MASTER_PIN_STORAGE_KEY = 'adstoto_admin_pin_v2';
+const DEFAULT_MASTER_PIN = '888888';
 
 const INITIAL_SAAS_USERS: UserProfile[] = [
   {
@@ -175,14 +177,95 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => unsubscribe();
   }, []);
 
+  const [isAdminUnlocked, setIsAdminUnlocked] = useState<boolean>(() => {
+    try {
+      return sessionStorage.getItem('adstoto_admin_unlocked') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const getMasterPin = (): string => {
+    try {
+      return localStorage.getItem(MASTER_PIN_STORAGE_KEY) || DEFAULT_MASTER_PIN;
+    } catch {
+      return DEFAULT_MASTER_PIN;
+    }
+  };
+
+  const verifyMasterPin = (pin: string): boolean => {
+    const current = getMasterPin();
+    return pin.trim() === current;
+  };
+
+  const changeMasterPin = (oldPin: string, newPin: string): { success: boolean; message: string } => {
+    if (!verifyMasterPin(oldPin)) {
+      return { success: false, message: 'Current Master Security PIN is incorrect.' };
+    }
+    const cleanNew = newPin.trim();
+    if (cleanNew.length < 6) {
+      return { success: false, message: 'New Master PIN must be at least 6 digits.' };
+    }
+    try {
+      localStorage.setItem(MASTER_PIN_STORAGE_KEY, cleanNew);
+      return { success: true, message: 'Master Security PIN has been updated successfully.' };
+    } catch {
+      return { success: false, message: 'Failed to update Master PIN in storage.' };
+    }
+  };
+
+  const loginAsAdminWithPin = async (pin: string): Promise<{ success: boolean; message?: string }> => {
+    if (!verifyMasterPin(pin)) {
+      return { success: false, message: 'Incorrect Master Security PIN.' };
+    }
+
+    try {
+      sessionStorage.setItem('adstoto_admin_unlocked', 'true');
+    } catch {
+      // Ignore
+    }
+    setIsAdminUnlocked(true);
+
+    // If an existing admin profile exists, activate it; otherwise attach admin privileges
+    let adminProfile = allUsers.find((u) => u.role === 'admin' || u.email === 'contact.team.starsclub@gmail.com');
+    if (!adminProfile) {
+      adminProfile = {
+        id: 'usr-admin-console',
+        name: 'Platform Administrator',
+        email: 'admin@adstoto.com',
+        brandName: 'AdsToto Executive Office',
+        websiteUrl: 'https://adstoto.com',
+        avatarBg: 'from-blue-600 via-indigo-600 to-purple-600',
+        avatarInitials: 'AD',
+        createdAt: new Date().toISOString(),
+        tier: 'Apex Partner',
+        isEmailVerified: true,
+        authProvider: 'custom',
+        status: 'active',
+        totalSpent: 1000,
+        activeAdsCount: 5,
+        lastActiveAt: new Date().toISOString(),
+        role: 'admin',
+      };
+      setAllUsers((prev) => [adminProfile!, ...prev]);
+    }
+
+    setUser(adminProfile);
+    return { success: true };
+  };
+
   const signInWithGoogle = async (profile?: {
     name?: string;
     email?: string;
     picture?: string;
   }): Promise<{ success: boolean; message?: string }> => {
     try {
-      const email = (profile?.email || 'contact.team.starsclub@gmail.com').trim().toLowerCase();
-      const name = profile?.name || 'Google Advertiser';
+      if (!profile?.email) {
+        return { success: false, message: 'Google account email was not provided. Please choose a valid account.' };
+      }
+
+      const email = profile.email.trim().toLowerCase();
+      const name = profile.name?.trim() || 'Advertiser';
       const words = name.split(/\s+/);
       const initials =
         words.length >= 2
@@ -191,22 +274,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       const existingUser = allUsers.find((u) => u.email.toLowerCase() === email);
 
+      const isOwnerEmail = email === 'contact.team.starsclub@gmail.com';
+
       const googleUser: UserProfile = existingUser
         ? {
             ...existingUser,
-            name: profile?.name || existingUser.name,
-            avatarUrl: profile?.picture || existingUser.avatarUrl,
+            name: profile.name || existingUser.name,
+            avatarUrl: profile.picture || existingUser.avatarUrl,
             lastActiveAt: new Date().toISOString(),
+            role: isOwnerEmail ? 'admin' : (existingUser.role || 'advertiser'),
           }
         : {
             id: 'usr-g-' + Math.random().toString(36).substring(2, 9),
             name: name,
             email: email,
-            brandName: `${name.split(' ')[0]}'s Venture`,
+            brandName: `${name.split(' ')[0]}'s Brand`,
             websiteUrl: 'https://adstoto.com',
             avatarBg: 'from-blue-600 via-indigo-600 to-purple-600',
             avatarInitials: initials,
-            avatarUrl: profile?.picture,
+            avatarUrl: profile.picture,
             createdAt: new Date().toISOString(),
             tier: 'Growth Marketer',
             isEmailVerified: true,
@@ -216,7 +302,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             totalSpent: 0,
             activeAdsCount: 0,
             lastActiveAt: new Date().toISOString(),
-            role: email === 'contact.team.starsclub@gmail.com' ? 'admin' : 'advertiser',
+            role: isOwnerEmail ? 'admin' : 'advertiser',
           };
 
       setAllUsers((prev) => {
@@ -237,10 +323,89 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const loginWithEmail = async (email: string, _password?: string): Promise<{ success: boolean; message?: string }> => {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      return { success: false, message: 'Please enter a valid email address.' };
+    }
+
+    const matched = allUsers.find((u) => u.email.toLowerCase() === cleanEmail);
+    if (!matched) {
+      return { 
+        success: false, 
+        message: 'No account found with this email. Click "Create Account" below to register in 10 seconds.' 
+      };
+    }
+
+    if (matched.status === 'suspended') {
+      return { success: false, message: 'This account is currently suspended. Please contact platform support.' };
+    }
+
+    const updated = { ...matched, lastActiveAt: new Date().toISOString() };
+    setUser(updated);
+    return { success: true };
+  };
+
+  const signUpWithEmail = async (data: {
+    name: string;
+    email: string;
+    brandName: string;
+    websiteUrl?: string;
+    password?: string;
+  }): Promise<{ success: boolean; message?: string }> => {
+    const cleanEmail = data.email.trim().toLowerCase();
+    const cleanName = data.name.trim();
+
+    if (!cleanName) {
+      return { success: false, message: 'Please enter your name or company.' };
+    }
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      return { success: false, message: 'Please enter a valid email address.' };
+    }
+
+    const existing = allUsers.find((u) => u.email.toLowerCase() === cleanEmail);
+    if (existing) {
+      return { success: false, message: 'An account with this email already exists. Please sign in.' };
+    }
+
+    const words = cleanName.split(/\s+/);
+    const initials =
+      words.length >= 2
+        ? (words[0][0] + words[1][0]).toUpperCase()
+        : cleanName.substring(0, 2).toUpperCase();
+
+    const isOwnerEmail = cleanEmail === 'contact.team.starsclub@gmail.com';
+
+    const newUser: UserProfile = {
+      id: 'usr-e-' + Math.random().toString(36).substring(2, 9),
+      name: cleanName,
+      email: cleanEmail,
+      brandName: data.brandName.trim() || `${cleanName.split(' ')[0]}'s Brand`,
+      websiteUrl: data.websiteUrl?.trim() || 'https://adstoto.com',
+      avatarBg: 'from-blue-600 via-indigo-600 to-purple-600',
+      avatarInitials: initials,
+      createdAt: new Date().toISOString(),
+      tier: 'Growth Marketer',
+      isEmailVerified: true,
+      emailVerifiedAt: new Date().toISOString(),
+      authProvider: 'custom',
+      status: 'active',
+      totalSpent: 0,
+      activeAdsCount: 0,
+      lastActiveAt: new Date().toISOString(),
+      role: isOwnerEmail ? 'admin' : 'advertiser',
+    };
+
+    setAllUsers((prev) => [newUser, ...prev]);
+    setUser(newUser);
+    syncUserToFirestore(newUser);
+    return { success: true };
+  };
+
   const connectWallet = async (address: string): Promise<{ success: boolean; message?: string }> => {
     const clean = address.trim();
-    if (!clean || clean.length < 8) {
-      return { success: false, message: 'Invalid wallet address.' };
+    if (!clean || clean.length < 10) {
+      return { success: false, message: 'Please provide a valid blockchain wallet address.' };
     }
 
     const shortAddr = `${clean.substring(0, 4)}...${clean.substring(clean.length - 4)}`;
@@ -252,14 +417,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       ? { ...existing, lastActiveAt: new Date().toISOString() }
       : {
           id: 'usr-w3-' + clean.substring(0, 8),
-          name: `Web3 Founder (${shortAddr})`,
-          email: `${clean.substring(0, 6)}@web3.adstoto.com`,
-          brandName: `BEP20-${clean.substring(2, 6).toUpperCase()}`,
+          name: `Web3 Advertiser (${shortAddr})`,
+          email: `${clean.substring(0, 8)}@wallet.adstoto.com`,
+          brandName: `Brand-${clean.substring(2, 6).toUpperCase()}`,
           walletAddress: clean,
-          avatarBg: 'from-amber-400 to-yellow-600',
+          avatarBg: 'from-amber-500 to-yellow-600',
           avatarInitials: 'W3',
           createdAt: new Date().toISOString(),
-          tier: 'Apex Partner',
+          tier: 'Growth Marketer',
           authProvider: 'web3',
           isEmailVerified: true,
           status: 'active',
@@ -288,7 +453,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem(STORAGE_KEY_AUTH);
+    setIsAdminUnlocked(false);
+    try {
+      localStorage.removeItem(STORAGE_KEY_AUTH);
+      sessionStorage.removeItem('adstoto_admin_unlocked');
+    } catch {
+      // Ignore
+    }
   };
 
   const updateProfile = (updates: Partial<UserProfile>) => {
@@ -383,20 +554,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     syncUserToFirestore(newUser);
   };
 
+  const isAdmin = user?.role === 'admin' || isAdminUnlocked;
+
   return (
     <AuthContext.Provider
       value={{
         user,
         isAuthenticated: !!user,
+        isAdmin,
         allUsers,
         signInWithGoogle,
         connectWallet,
+        loginWithEmail,
+        signUpWithEmail,
+        loginAsAdminWithPin,
         logout,
         updateProfile,
         deleteUser,
         updateUserTier,
         toggleUserStatus,
         addAdminUser,
+        verifyMasterPin,
+        changeMasterPin,
       }}
     >
       {children}

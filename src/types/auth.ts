@@ -23,15 +23,21 @@ export interface UserProfile {
 export interface AuthState {
   user: UserProfile | null;
   isAuthenticated: boolean;
+  isAdmin: boolean;
   allUsers: UserProfile[];
   signInWithGoogle: (profile?: { name?: string; email?: string; picture?: string }) => Promise<{ success: boolean; message?: string }>;
   connectWallet: (address: string) => Promise<{ success: boolean; message?: string }>;
+  loginWithEmail: (email: string, password?: string) => Promise<{ success: boolean; message?: string }>;
+  signUpWithEmail: (data: { name: string; email: string; brandName: string; websiteUrl?: string; password?: string }) => Promise<{ success: boolean; message?: string }>;
+  loginAsAdminWithPin: (pin: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
   updateProfile: (updates: Partial<UserProfile>) => void;
   deleteUser: (id: string) => void;
   updateUserTier: (id: string, tier: 'Starter Advertiser' | 'Growth Marketer' | 'Apex Partner') => void;
   toggleUserStatus: (id: string) => void;
   addAdminUser: (userData: Partial<UserProfile>) => void;
+  verifyMasterPin: (pin: string) => boolean;
+  changeMasterPin: (oldPin: string, newPin: string) => { success: boolean; message: string };
   login?: (email: string, password?: string) => Promise<{ success: boolean; message?: string }>;
   signup?: (data: { name: string; email: string; brandName: string; websiteUrl?: string; password?: string }) => Promise<{ success: boolean; message?: string }>;
   verifySignupEmail?: (email: string, code: string) => Promise<{ success: boolean; message?: string }>;

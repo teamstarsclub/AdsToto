@@ -36,11 +36,14 @@ export async function signInWithGooglePopup(): Promise<GoogleAuthResult> {
   try {
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
+    if (!user || !user.email) {
+      throw new Error('Google account email was not provided. Please choose a valid Google account.');
+    }
 
     return {
       uid: user.uid,
       name: user.displayName || 'Google Advertiser',
-      email: user.email || 'contact.team.starsclub@gmail.com',
+      email: user.email,
       picture: user.photoURL || undefined,
     };
   } catch (error: any) {

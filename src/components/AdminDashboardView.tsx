@@ -50,17 +50,29 @@ import {
 
 interface AdminDashboardViewProps {
   onOpenCreateAd?: () => void;
+  onSwitchToUserView?: () => void;
 }
 
-const PIN_STORAGE_KEY = 'adstoto_admin_pin_v1';
-const DEFAULT_PIN = '888888';
-
-export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onOpenCreateAd }) => {
-  const { user, allUsers, deleteUser, updateUserTier, toggleUserStatus, addAdminUser } = useAuth();
+export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ 
+  onOpenCreateAd,
+  onSwitchToUserView,
+}) => {
+  const { 
+    user, 
+    isAdmin, 
+    allUsers, 
+    deleteUser, 
+    updateUserTier, 
+    toggleUserStatus, 
+    addAdminUser,
+    loginAsAdminWithPin,
+    changeMasterPin,
+    logout
+  } = useAuth();
   const { campaigns, payoutSettings, updatePayoutSettings } = useAds();
 
-  // Admin PIN Unlock State
-  const [isUnlocked, setIsUnlocked] = useState(false);
+  // Admin PIN Unlock State (auto-unlocked if user is already an admin)
+  const [isUnlocked, setIsUnlocked] = useState(() => isAdmin);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState<string | null>(null);
 
@@ -94,6 +106,26 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onOpenCr
   const [solanaAddress, setSolanaAddress] = useState(payoutSettings.solanaAddress || '');
   const [googleClientId, setGoogleClientId] = useState(() => getGoogleClientId());
   const [settingsSuccess, setSettingsSuccess] = useState<string | null>(null);
+
+  // Security Master PIN Change State
+  const [oldPinChange, setOldPinChange] = useState('');
+  const [newPinChange, setNewPinChange] = useState('');
+  const [pinChangeResult, setPinChangeResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  const handleChangePin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!oldPinChange.trim() || !newPinChange.trim()) {
+      setPinChangeResult({ success: false, message: 'Please fill out both current and new PIN fields.' });
+      return;
+    }
+    const res = changeMasterPin(oldPinChange.trim(), newPinChange.trim());
+    setPinChangeResult(res);
+    if (res.success) {
+      setOldPinChange('');
+      setNewPinChange('');
+      setTimeout(() => setPinChangeResult(null), 4000);
+    }
+  };
 
   // Platform Metrics & Aggregate Stats
   const totalUsers = allUsers.length;
@@ -136,21 +168,20 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onOpenCr
   }, [allUsers, searchTerm, filterProvider]);
 
   // Unlock validation
-  const handleUnlock = (e?: React.FormEvent) => {
+  const handleUnlock = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    const stored = localStorage.getItem(PIN_STORAGE_KEY) || DEFAULT_PIN;
-    if (pinInput.trim() === stored || pinInput.trim() === DEFAULT_PIN) {
+    if (!pinInput.trim()) {
+      setPinError('Please enter your Master Security PIN.');
+      return;
+    }
+    const res = await loginAsAdminWithPin(pinInput.trim());
+    if (res.success) {
       setIsUnlocked(true);
       setPinError(null);
+      setPinInput('');
     } else {
-      setPinError('Incorrect Master Security PIN.');
+      setPinError(res.message || 'Incorrect Master Security PIN.');
     }
-  };
-
-  const handleInstantDemoUnlock = () => {
-    setPinInput(DEFAULT_PIN);
-    setIsUnlocked(true);
-    setPinError(null);
   };
 
   const handleCreateUser = (e: React.FormEvent) => {
@@ -359,7 +390,7 @@ Generated automatically by AdsToto SaaS Operations Center.`;
             maxLength={10}
             value={pinInput}
             onChange={(e) => setPinInput(e.target.value)}
-            placeholder="Enter Master PIN (e.g. 888888)"
+            placeholder="Enter Master Security PIN"
             className="w-full text-center bg-white border border-slate-300 rounded-2xl px-4 py-3 font-mono text-xl text-slate-900 tracking-widest focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-2xs"
           />
 
@@ -377,16 +408,15 @@ Generated automatically by AdsToto SaaS Operations Center.`;
             >
               Unlock Admin Command Center
             </button>
-
-            {/* Instant One-Click Demo Access */}
-            <button
-              type="button"
-              onClick={handleInstantDemoUnlock}
-              className="w-full py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 font-medium text-xs rounded-xl border border-slate-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              <Unlock className="w-3.5 h-3.5 text-blue-600" />
-              <span>Instant 1-Click Access (Default PIN: 888888)</span>
-            </button>
+            {onSwitchToUserView && (
+              <button
+                type="button"
+                onClick={onSwitchToUserView}
+                className="w-full py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 font-medium text-xs rounded-xl border border-slate-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <span>Return to Public Site</span>
+              </button>
+            )}
           </div>
         </form>
       </div>
@@ -423,6 +453,18 @@ Generated automatically by AdsToto SaaS Operations Center.`;
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
+          {/* Switch to User View */}
+          {onSwitchToUserView && (
+            <button
+              onClick={onSwitchToUserView}
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-blue-700 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors border border-blue-200 cursor-pointer shadow-2xs"
+              title="Switch to User Dashboard & Test Public Site"
+            >
+              <Users className="w-3.5 h-3.5 text-blue-600" />
+              <span>Switch to User View</span>
+            </button>
+          )}
+
           {/* Quick Copy Report */}
           <button
             onClick={handleCopyTextSummary}
@@ -454,7 +496,14 @@ Generated automatically by AdsToto SaaS Operations Center.`;
 
           {/* Lock Admin */}
           <button
-            onClick={() => setIsUnlocked(false)}
+            onClick={() => {
+              setIsUnlocked(false);
+              try {
+                sessionStorage.removeItem('adstoto_admin_unlocked');
+              } catch {
+                // Ignore
+              }
+            }}
             className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl border border-slate-200 transition-colors cursor-pointer"
             title="Lock Admin Console"
           >
@@ -1572,7 +1621,8 @@ Generated automatically by AdsToto SaaS Operations Center.`;
       {/* TAB 6: PLATFORM & OAUTH SETTINGS                         */}
       {/* ======================================================== */}
       {activeTab === 'settings' && (
-        <form onSubmit={handleSaveSettings} className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-5 max-w-2xl">
+        <div className="space-y-6 max-w-2xl">
+          <form onSubmit={handleSaveSettings} className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-5">
           <div>
             <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <KeyRound className="w-4 h-4 text-blue-600" />
@@ -1655,6 +1705,73 @@ Generated automatically by AdsToto SaaS Operations Center.`;
             </button>
           </div>
         </form>
+
+        {/* Change Master Security PIN Form */}
+        <form onSubmit={handleChangePin} className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-5 max-w-2xl">
+          <div>
+            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <Shield className="w-4 h-4 text-blue-600" />
+              <span>Change Master Security PIN</span>
+            </h3>
+            <p className="text-xs text-slate-500 mt-1">
+              Update the administrative secret PIN used to unlock the Admin Operations Suite and Treasury Vault. Keep this confidential.
+            </p>
+          </div>
+
+          {pinChangeResult && (
+            <div className={`p-3 rounded-xl border text-xs flex items-center gap-2 ${
+              pinChangeResult.success 
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-700' 
+                : 'bg-rose-50 border-rose-200 text-rose-700'
+            }`}>
+              {pinChangeResult.success ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              ) : (
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              )}
+              <span>{pinChangeResult.message}</span>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-slate-700">
+                Current Master Security PIN
+              </label>
+              <input
+                type="password"
+                value={oldPinChange}
+                onChange={(e) => setOldPinChange(e.target.value)}
+                placeholder="Enter current PIN"
+                className="w-full bg-slate-50/70 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500/20"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-slate-700">
+                New Master PIN (Min 6 digits)
+              </label>
+              <input
+                type="password"
+                value={newPinChange}
+                onChange={(e) => setNewPinChange(e.target.value)}
+                placeholder="Enter new 6+ digit PIN"
+                className="w-full bg-slate-50/70 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500/20"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2.5 pt-1">
+            <button
+              type="submit"
+              className="flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl shadow-2xs transition-all cursor-pointer"
+            >
+              <Lock className="w-3.5 h-3.5 text-slate-700" />
+              <span>Update Master Security PIN</span>
+            </button>
+          </div>
+        </form>
+      </div>
       )}
 
       {/* ======================================================== */}

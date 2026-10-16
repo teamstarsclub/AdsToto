@@ -116,10 +116,14 @@ export async function requestRealGoogleSignIn(
             }
 
             const data = await res.json();
+            if (!data.email) {
+              onError('Google did not return an email address for this account. Please select a verified account.');
+              return;
+            }
             onSuccess({
               sub: data.sub || Math.random().toString(),
               name: data.name || data.given_name || 'Google Advertiser',
-              email: data.email || 'contact.team.starsclub@gmail.com',
+              email: data.email,
               picture: data.picture,
               email_verified: data.email_verified,
             });

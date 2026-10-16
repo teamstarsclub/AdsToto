@@ -7,7 +7,12 @@ import {
   ShieldCheck, 
   Sparkles, 
   AlertCircle, 
-  CheckCircle2 
+  CheckCircle2,
+  Mail,
+  Lock,
+  User,
+  Building,
+  ArrowRight
 } from 'lucide-react';
 
 interface AuthModalProps {
@@ -21,17 +26,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onClose,
   onVerificationSuccess,
 }) => {
-  const { signInWithGoogle, connectWallet } = useAuth();
+  const { signInWithGoogle, connectWallet, loginWithEmail, signUpWithEmail } = useAuth();
 
+  // Mode: 'signin' | 'signup'
+  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
+  // Sub-method: 'quick' (Google) | 'email' | 'web3'
+  const [authMethod, setAuthMethod] = useState<'quick' | 'email' | 'web3'>('quick');
+
+  // Form Fields
+  const [emailInput, setEmailInput] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
+  const [nameInput, setNameInput] = useState('');
+  const [brandInput, setBrandInput] = useState('');
   const [walletInput, setWalletInput] = useState('');
-  const [isWeb3Open, setIsWeb3Open] = useState(false);
+
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [authSuccess, setAuthSuccess] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  // Real Google Sign-In Handler (Reliable official Google authentication)
+  // Real Google Sign-In Handler
   const handleGoogleClick = async () => {
     setError(null);
     setLoading(true);
@@ -47,7 +62,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
       setLoading(false);
       if (result.success) {
-        setAuthSuccess(`Signed in with Google as ${googleUser.email}!`);
+        setAuthSuccess(`Welcome, ${googleUser.name}!`);
         setTimeout(() => {
           onClose();
           if (onVerificationSuccess) onVerificationSuccess();
@@ -61,6 +76,56 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         return;
       }
       setError(err?.message || 'Google authentication was not completed. Please try again.');
+    }
+  };
+
+  // Email Sign In / Sign Up Handler
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!emailInput.trim() || !emailInput.includes('@')) {
+      setError('Please provide a valid business or personal email address.');
+      return;
+    }
+
+    setLoading(true);
+
+    if (authMode === 'signup') {
+      if (!nameInput.trim()) {
+        setLoading(false);
+        setError('Please enter your name or team handle.');
+        return;
+      }
+      const res = await signUpWithEmail({
+        name: nameInput.trim(),
+        email: emailInput.trim(),
+        brandName: brandInput.trim() || `${nameInput.trim()}'s Brand`,
+        password: passwordInput,
+      });
+      setLoading(false);
+      if (res.success) {
+        setAuthSuccess('Account created successfully!');
+        setTimeout(() => {
+          onClose();
+          if (onVerificationSuccess) onVerificationSuccess();
+        }, 800);
+      } else {
+        setError(res.message || 'Registration failed.');
+      }
+    } else {
+      // Sign In
+      const res = await loginWithEmail(emailInput.trim(), passwordInput);
+      setLoading(false);
+      if (res.success) {
+        setAuthSuccess('Signed in successfully!');
+        setTimeout(() => {
+          onClose();
+          if (onVerificationSuccess) onVerificationSuccess();
+        }, 800);
+      } else {
+        setError(res.message || 'Login failed.');
+      }
     }
   };
 
@@ -86,34 +151,31 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             return;
           }
         }
+      } else {
+        setLoading(false);
+        setError('No Web3 browser wallet detected. Please paste your wallet address (0x...) below.');
+        return;
       }
     } catch (err: unknown) {
-      console.warn('Browser wallet request declined or unavailable:', err);
+      setLoading(false);
+      setError('Wallet connection was cancelled or rejected by user.');
+      return;
     }
 
-    // Fallback: connect with address
-    const res = await connectWallet(walletInput.trim() || '0x71C8F6964F88c83a1519d0aB1a89c97b830d6F22');
     setLoading(false);
-    if (res.success) {
-      setAuthSuccess('Web3 Wallet connected!');
-      setTimeout(() => {
-        onClose();
-        if (onVerificationSuccess) onVerificationSuccess();
-      }, 800);
-    } else {
-      setError(res.message || 'Failed to connect wallet.');
-    }
+    setError('No wallet account selected.');
   };
 
   const handleManualWalletSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!walletInput.trim()) {
-      setError('Please enter a valid wallet address.');
+    const clean = walletInput.trim();
+    if (!clean || clean.length < 10) {
+      setError('Please enter a valid BSC or EVM blockchain address (e.g., 0x...).');
       return;
     }
     setError(null);
     setLoading(true);
-    const res = await connectWallet(walletInput.trim());
+    const res = await connectWallet(clean);
     setLoading(false);
     if (res.success) {
       setAuthSuccess('Wallet connected!');
@@ -128,36 +190,70 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md bg-white border border-slate-200/90 rounded-3xl shadow-xl p-7 sm:p-8 space-y-6 text-slate-900">
+      <div className="relative w-full max-w-md bg-white border border-slate-200/90 rounded-3xl shadow-xl p-6 sm:p-7 space-y-5 text-slate-900">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
 
-        {/* Modal Brand Wordmark */}
+        {/* Brand Header */}
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-xs">
-            <span className="font-mono text-sm font-bold tracking-wider">AT</span>
+          <div className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center shadow-xs">
+            <span className="font-mono text-xs font-bold tracking-wider">AT</span>
           </div>
           <span className="text-base font-bold text-slate-900 tracking-tight">AdsToto</span>
         </div>
 
-        {/* Header Text matching clean pro design */}
-        <div className="space-y-2">
-          <h2 className="text-2xl sm:text-[26px] font-extrabold text-slate-900 tracking-tight leading-snug">
-            Sign in or create an account
+        {/* Mode Switcher: Sign In vs Create Account */}
+        <div className="grid grid-cols-2 p-1 rounded-xl bg-slate-100 border border-slate-200 text-xs font-semibold">
+          <button
+            type="button"
+            onClick={() => {
+              setAuthMode('signin');
+              setError(null);
+            }}
+            className={`py-2 rounded-lg transition-all cursor-pointer ${
+              authMode === 'signin'
+                ? 'bg-white text-slate-900 shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Sign In
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setAuthMode('signup');
+              setError(null);
+            }}
+            className={`py-2 rounded-lg transition-all cursor-pointer ${
+              authMode === 'signup'
+                ? 'bg-white text-slate-900 shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Create Account
+          </button>
+        </div>
+
+        {/* Title */}
+        <div>
+          <h2 className="text-xl font-black text-slate-900 tracking-tight">
+            {authMode === 'signin' ? 'Welcome Back to AdsToto' : 'Create Your Advertiser Account'}
           </h2>
-          <p className="text-sm text-slate-500 leading-relaxed">
-            Use Google or connect your Web3 wallet to continue with AdsToto (it’s free)!
+          <p className="text-xs text-slate-500 mt-0.5">
+            {authMode === 'signin'
+              ? 'Access your personal Advertiser Dashboard, live clicks, and stats.'
+              : 'Join the pay-to-rank ad exchange and track real-time campaign performance.'}
           </p>
         </div>
 
         {/* Error Alert */}
         {error && (
-          <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2.5 animate-in fade-in duration-150">
+          <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2 animate-in fade-in duration-150">
             <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
             <span>{error}</span>
           </div>
@@ -165,22 +261,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         {/* Success Alert */}
         {authSuccess && (
-          <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-700 flex items-center gap-2.5 animate-in fade-in duration-150">
+          <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-700 flex items-center gap-2 animate-in fade-in duration-150">
             <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
             <span>{authSuccess} Redirecting to your dashboard...</span>
           </div>
         )}
 
-        {/* PRIMARY CTA: CONTINUE WITH GOOGLE */}
-        <div className="space-y-3 pt-1">
+        {/* Primary Method: Google Sign-In */}
+        <div className="space-y-3">
           <button
             type="button"
             onClick={handleGoogleClick}
             disabled={loading}
-            className="w-full py-3.5 px-4 bg-white hover:bg-slate-50 text-slate-900 font-semibold text-sm rounded-xl shadow-xs border border-slate-300 hover:border-slate-400 transition-all duration-200 flex items-center justify-center gap-3.5 group cursor-pointer disabled:opacity-60"
+            className="w-full py-3 px-4 bg-white hover:bg-slate-50 text-slate-900 font-semibold text-sm rounded-xl shadow-xs border border-slate-300 hover:border-slate-400 transition-all duration-200 flex items-center justify-center gap-3 group cursor-pointer disabled:opacity-60"
           >
-            {/* Google 4-Color SVG Icon */}
-            <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
               <path
                 fill="#4285F4"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -198,8 +293,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
               />
             </svg>
-            <span className="tracking-tight text-slate-800 font-semibold text-base">
-              {loading ? 'Opening Google Sign-In...' : 'Continue with Google'}
+            <span className="tracking-tight text-slate-800 font-semibold text-xs sm:text-sm">
+              {loading ? 'Connecting with Google...' : `Continue with Google (${authMode === 'signup' ? '1-Click Signup' : '1-Click Login'})`}
             </span>
           </button>
         </div>
@@ -207,82 +302,159 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {/* Divider */}
         <div className="relative flex items-center justify-center">
           <div className="w-full border-t border-slate-200"></div>
-          <span className="absolute bg-white px-3 text-xs uppercase font-mono font-semibold text-slate-400 tracking-wider">
-            OR
+          <span className="absolute bg-white px-3 text-[10px] uppercase font-mono font-semibold text-slate-400 tracking-wider">
+            OR USE EMAIL / WALLET
           </span>
         </div>
 
-        {/* WEB3 WALLET SIGN UP / LOGIN */}
-        <div className="space-y-3">
-          {!isWeb3Open ? (
+        {/* Sub-method Switcher: Email vs Web3 */}
+        <div className="flex items-center gap-2 text-xs">
+          <button
+            type="button"
+            onClick={() => setAuthMethod('email')}
+            className={`flex-1 py-1.5 px-3 rounded-lg border text-center font-medium transition-colors cursor-pointer flex items-center justify-center gap-1.5 ${
+              authMethod === 'email'
+                ? 'bg-blue-50 border-blue-200 text-blue-700 font-semibold'
+                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <Mail className="w-3.5 h-3.5" />
+            <span>Email &amp; Password</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setAuthMethod('web3')}
+            className={`flex-1 py-1.5 px-3 rounded-lg border text-center font-medium transition-colors cursor-pointer flex items-center justify-center gap-1.5 ${
+              authMethod === 'web3'
+                ? 'bg-blue-50 border-blue-200 text-blue-700 font-semibold'
+                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <Wallet className="w-3.5 h-3.5" />
+            <span>Web3 Wallet</span>
+          </button>
+        </div>
+
+        {/* EMAIL FORM */}
+        {authMethod === 'email' && (
+          <form onSubmit={handleEmailSubmit} className="space-y-3 p-4 rounded-2xl bg-slate-50 border border-slate-200 animate-in fade-in duration-150">
+            {authMode === 'signup' && (
+              <>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-700 flex items-center gap-1">
+                    <User className="w-3 h-3 text-slate-500" />
+                    <span>Your Full Name / Alias</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={nameInput}
+                    onChange={(e) => setNameInput(e.target.value)}
+                    placeholder="e.g. Alex Morgan"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-blue-600"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-700 flex items-center gap-1">
+                    <Building className="w-3 h-3 text-slate-500" />
+                    <span>Brand or Project Name</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={brandInput}
+                    onChange={(e) => setBrandInput(e.target.value)}
+                    placeholder="e.g. Acme Tech Labs"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-blue-600"
+                  />
+                </div>
+              </>
+            )}
+
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold text-slate-700 flex items-center gap-1">
+                <Mail className="w-3 h-3 text-slate-500" />
+                <span>Email Address</span>
+              </label>
+              <input
+                type="email"
+                required
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                placeholder="you@company.com"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-blue-600"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold text-slate-700 flex items-center gap-1">
+                <Lock className="w-3 h-3 text-slate-500" />
+                <span>Password</span>
+              </label>
+              <input
+                type="password"
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                placeholder="••••••••"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-blue-600"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2.5 px-4 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer mt-1"
+            >
+              <span>{authMode === 'signup' ? 'Create Free Account' : 'Sign In to Dashboard'}</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </form>
+        )}
+
+        {/* WEB3 FORM */}
+        {authMethod === 'web3' && (
+          <div className="space-y-3 p-4 rounded-2xl bg-slate-50 border border-slate-200 animate-in fade-in duration-150">
             <button
               type="button"
-              onClick={() => setIsWeb3Open(true)}
-              className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm rounded-xl border border-slate-900 transition-all flex items-center justify-center gap-2.5 shadow-xs cursor-pointer"
+              onClick={handleConnectBrowserWallet}
+              disabled={loading}
+              className="w-full py-2.5 px-3 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
             >
-              <Wallet className="w-4 h-4 text-slate-300" />
-              <span>Connect Web3 Wallet (BEP-20 / EVM)</span>
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span>Connect MetaMask / TrustWallet</span>
             </button>
-          ) : (
-            <form onSubmit={handleManualWalletSubmit} className="space-y-3 p-4 rounded-2xl bg-slate-50 border border-slate-200">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                  <Wallet className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Web3 Wallet Connection</span>
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setIsWeb3Open(false)}
-                  className="text-[11px] text-slate-500 hover:text-slate-700 cursor-pointer"
-                >
-                  Cancel
-                </button>
-              </div>
 
-              {/* Instant Browser Connect Button */}
-              <button
-                type="button"
-                onClick={handleConnectBrowserWallet}
-                disabled={loading}
-                className="w-full py-2 px-3 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Auto-Detect MetaMask / TrustWallet</span>
-              </button>
+            <div className="text-[10px] text-slate-400 text-center font-mono uppercase">
+              or enter public address
+            </div>
 
-              <div className="text-[10px] text-slate-400 text-center font-mono uppercase">
-                or enter wallet address
-              </div>
-
-              <div className="space-y-1">
-                <input
-                  type="text"
-                  value={walletInput}
-                  onChange={(e) => setWalletInput(e.target.value)}
-                  placeholder="0x71C8F6964F88c83a1519d0aB1a89c97b830d6F22"
-                  className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
-                />
-              </div>
+            <form onSubmit={handleManualWalletSubmit} className="space-y-2">
+              <input
+                type="text"
+                value={walletInput}
+                onChange={(e) => setWalletInput(e.target.value)}
+                placeholder="0x... (e.g. your BSC or ETH wallet address)"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600"
+              />
 
               <button
                 type="submit"
                 disabled={loading}
                 className="w-full py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-xl transition-colors cursor-pointer"
               >
-                {loading ? 'Connecting...' : 'Connect Address & Access Dashboard'}
+                {loading ? 'Connecting...' : 'Connect Address & Open Dashboard'}
               </button>
             </form>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Security & Free Guarantee Footer */}
+        {/* Footer Guarantee */}
         <div className="pt-2 text-center text-xs text-slate-500 flex items-center justify-center gap-4">
           <span className="flex items-center gap-1">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Instant Access</span>
+            <span>Instant User Dashboard</span>
           </span>
-          <span>·</span>
-          <span>Zero Password Friction</span>
           <span>·</span>
           <span>100% Free Account</span>
         </div>
