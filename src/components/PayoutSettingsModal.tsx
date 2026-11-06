@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAds } from '../context/AdContext';
+import { useAuth } from '../context/AuthContext';
 import { getRedeemedTxHashes } from '../utils/cryptoVerification';
 import { getGoogleClientId, saveGoogleClientId } from '../services/googleAuthService';
 import { 
@@ -31,13 +32,18 @@ const DEFAULT_PIN = 'alfaPRO02@';
 
 export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({ onClose }) => {
   const { payoutSettings, updatePayoutSettings } = useAds();
+  const { isAdmin, user } = useAuth();
+  const isOwnerAdmin =
+    isAdmin ||
+    user?.role === 'admin' ||
+    user?.email?.toLowerCase() === 'contact.team.starsclub@gmail.com';
 
   const [storedPin, setStoredPin] = useState(() => {
     return localStorage.getItem(PIN_STORAGE_KEY) || DEFAULT_PIN;
   });
 
   const [enteredPin, setEnteredPin] = useState('');
-  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [isUnlocked, setIsUnlocked] = useState(() => isOwnerAdmin);
   const [pinError, setPinError] = useState<string | null>(null);
 
   // Vault Tab State

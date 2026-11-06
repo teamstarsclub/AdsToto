@@ -273,6 +273,9 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({
                   type="number"
                   min={1}
                   step="any"
+                  lang="en-US"
+                  dir="ltr"
+                  inputMode="decimal"
                   value={bidAmount}
                   onChange={(e) => {
                     const val = Number(e.target.value);
@@ -341,6 +344,9 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({
                     type="number"
                     min={1}
                     step="any"
+                    lang="en-US"
+                    dir="ltr"
+                    inputMode="decimal"
                     value={maxBudget}
                     onChange={(e) => setMaxBudget(Number(e.target.value))}
                     className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 font-mono mt-1 focus:outline-none focus:border-blue-600"

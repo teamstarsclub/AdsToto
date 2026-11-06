@@ -107,6 +107,9 @@ export const AutoBidderPanel: React.FC = () => {
                         min={activeCampaign.bidAmount}
                         max={5000}
                         step={25}
+                        lang="en-US"
+                        dir="ltr"
+                        inputMode="decimal"
                         value={activeCampaign.autoBid.maxBudget}
                         onChange={(e) =>
                           updateAutoBidConfig(activeCampaign.id, {

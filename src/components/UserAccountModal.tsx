@@ -130,17 +130,17 @@ export const UserAccountModal: React.FC<UserAccountModalProps> = ({
               <span className="hidden sm:inline">My Dashboard</span>
             </button>
 
-            {(user.role === 'admin' || isAdmin) && (
+            {user && (
               <button
                 onClick={() => {
                   onClose();
                   onNavigateTab('admin');
                 }}
                 className="p-2 text-xs font-semibold text-purple-700 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 rounded-lg border border-purple-200 transition-colors flex items-center gap-1.5 cursor-pointer"
-                title="Open Platform Admin Operations Dashboard"
+                title="Open Platform Admin Operations Dashboard (Master PIN Protected)"
               >
                 <Shield className="w-3.5 h-3.5 text-purple-600" />
-                <span className="hidden sm:inline">Admin Suite</span>
+                <span className="hidden sm:inline">{isAdmin ? 'Admin Suite' : 'Admin Console'}</span>
               </button>
             )}
 

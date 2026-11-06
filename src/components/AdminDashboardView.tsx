@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useAds } from '../context/AdContext';
 import { UserProfile } from '../types/auth';
@@ -72,9 +72,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const { campaigns, payoutSettings, updatePayoutSettings } = useAds();
 
   // Admin PIN Unlock State (auto-unlocked if user is already an admin)
-  const [isUnlocked, setIsUnlocked] = useState(() => isAdmin);
+  const isOwnerAdmin = user?.role === 'admin' || user?.email?.toLowerCase() === 'contact.team.starsclub@gmail.com';
+  const [isUnlocked, setIsUnlocked] = useState(() => isAdmin || isOwnerAdmin);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isAdmin || isOwnerAdmin) {
+      setIsUnlocked(true);
+    }
+  }, [isAdmin, isOwnerAdmin]);
 
   // Active Tab: overview | users | reports | financials | moderation | settings
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'reports' | 'financials' | 'moderation' | 'settings'>('overview');

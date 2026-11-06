@@ -116,7 +116,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const saved = localStorage.getItem(STORAGE_KEY_AUTH);
       if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') {
+          if (
+            parsed.email?.toLowerCase() === 'contact.team.starsclub@gmail.com' ||
+            parsed.email?.toLowerCase()?.startsWith('admin@')
+          ) {
+            parsed.role = 'admin';
+          }
+          return parsed;
+        }
       }
     } catch {
       // Fallback
@@ -341,7 +350,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return { success: false, message: 'This account is currently suspended. Please contact platform support.' };
     }
 
-    const updated = { ...matched, lastActiveAt: new Date().toISOString() };
+    const isOwnerEmail =
+      cleanEmail === 'contact.team.starsclub@gmail.com' || cleanEmail.startsWith('admin@');
+    const updated: UserProfile = {
+      ...matched,
+      role: isOwnerEmail ? 'admin' : (matched.role || 'advertiser'),
+      lastActiveAt: new Date().toISOString(),
+    };
     setUser(updated);
     return { success: true };
   };
@@ -554,7 +569,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     syncUserToFirestore(newUser);
   };
 
-  const isAdmin = !!user && (user.role === 'admin' || isAdminUnlocked);
+  const isAdmin =
+    !!user &&
+    (user.role === 'admin' ||
+      user.email?.toLowerCase() === 'contact.team.starsclub@gmail.com' ||
+      user.email?.toLowerCase()?.startsWith('admin@') ||
+      isAdminUnlocked);
 
   return (
     <AuthContext.Provider

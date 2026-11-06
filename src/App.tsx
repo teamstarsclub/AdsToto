@@ -264,7 +264,7 @@ function MainApp() {
             </button>
 
             {/* Admin Console & Security Vault - STRICTLY WHEN USER IS LOGGED IN */}
-            {user && (isAdmin || user.role === 'admin') && (
+            {user && (
               <>
                 <button
                   onClick={() => setActiveTab('admin')}

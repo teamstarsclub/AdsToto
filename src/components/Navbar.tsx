@@ -115,8 +115,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span>AI Intel</span>
           </button>
 
-          {/* Admin Console Tab - STRICTLY FOR LOGGED IN ADMINS */}
-          {user && isAdmin && (
+          {/* Admin Console Tab - STRICTLY FOR LOGGED IN USERS */}
+          {user && (
             <button
               onClick={() => setActiveTab('admin')}
               className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
@@ -124,10 +124,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                   ? 'bg-slate-900 text-white font-semibold shadow-xs'
                   : 'text-purple-700 hover:text-purple-900 bg-purple-50 hover:bg-purple-100 border border-purple-200'
               }`}
-              title="Open Platform Admin Dashboard & Operations"
+              title="Open Platform Admin Dashboard & Operations (Master PIN Protected)"
             >
               <Shield className="w-3.5 h-3.5 text-purple-600" />
               <span>Admin Console</span>
+              {!isAdmin && <span className="text-[10px] text-purple-400 font-mono">🔒</span>}
             </button>
           )}
         </nav>
@@ -171,11 +172,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           )}
 
-          {/* Internal Admin Vault (PIN Protected) - strictly for logged in admin */}
-          {user && isAdmin && onOpenPayoutSettings && (
+          {/* Internal Admin Vault (PIN Protected) - strictly for logged in users */}
+          {user && onOpenPayoutSettings && (
             <button
               onClick={onOpenPayoutSettings}
-              title="Security Vault & Treasury Configuration"
+              title="Security Vault & Treasury Configuration (Master PIN Protected)"
               className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg border border-slate-200/90 transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <Lock className="w-4 h-4 text-slate-500" />
@@ -236,7 +237,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         >
           AI Intel
         </button>
-        {user && isAdmin && (
+        {user && (
           <button
             onClick={() => setActiveTab('admin')}
             className={`px-2.5 py-1 text-xs rounded-md whitespace-nowrap flex items-center gap-1 ${
