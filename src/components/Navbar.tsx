@@ -115,8 +115,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span>AI Intel</span>
           </button>
 
-          {/* Admin Console Tab - STRICTLY FOR ADMINS */}
-          {isAdmin && (
+          {/* Admin Console Tab - STRICTLY FOR LOGGED IN ADMINS */}
+          {user && isAdmin && (
             <button
               onClick={() => setActiveTab('admin')}
               className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
@@ -171,8 +171,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           )}
 
-          {/* Internal Admin Vault (PIN Protected) - strictly for admin */}
-          {isAdmin && onOpenPayoutSettings && (
+          {/* Internal Admin Vault (PIN Protected) - strictly for logged in admin */}
+          {user && isAdmin && onOpenPayoutSettings && (
             <button
               onClick={onOpenPayoutSettings}
               title="Security Vault & Treasury Configuration"
@@ -236,7 +236,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         >
           AI Intel
         </button>
-        {isAdmin && (
+        {user && isAdmin && (
           <button
             onClick={() => setActiveTab('admin')}
             className={`px-2.5 py-1 text-xs rounded-md whitespace-nowrap flex items-center gap-1 ${

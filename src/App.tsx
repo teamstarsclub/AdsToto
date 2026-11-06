@@ -189,12 +189,40 @@ function MainApp() {
           />
         )}
 
-        {/* SaaS Operations Admin Dashboard */}
+        {/* SaaS Operations Admin Dashboard - ONLY FOR LOGGED IN USERS */}
         {activeTab === 'admin' && (
-          <AdminDashboardView 
-            onOpenCreateAd={handleOpenNewCampaign} 
-            onSwitchToUserView={() => setActiveTab('my-campaigns')}
-          />
+          user ? (
+            <AdminDashboardView 
+              onOpenCreateAd={handleOpenNewCampaign} 
+              onSwitchToUserView={() => setActiveTab('my-campaigns')}
+            />
+          ) : (
+            <div className="max-w-md mx-auto my-16 p-8 rounded-3xl bg-white border border-slate-200/90 shadow-xl text-center space-y-5 animate-in fade-in duration-200 text-slate-900">
+              <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center mx-auto shadow-xs">
+                <Shield className="w-7 h-7" />
+              </div>
+              <div className="space-y-1.5">
+                <h2 className="text-xl font-black text-slate-900 tracking-tight">Admin Access Restricted</h2>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  The admin operations suite is only accessible when logged in. Please sign in to your advertiser account to continue.
+                </p>
+              </div>
+              <div className="space-y-2 pt-2">
+                <button
+                  onClick={() => setIsAuthModalOpen(true)}
+                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
+                >
+                  Sign In to Continue
+                </button>
+                <button
+                  onClick={() => setActiveTab('leaderboard')}
+                  className="w-full py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs rounded-xl border border-slate-200 transition-colors cursor-pointer"
+                >
+                  Return to Marketplace
+                </button>
+              </div>
+            </div>
+          )
         )}
       </main>
 
@@ -235,7 +263,8 @@ function MainApp() {
               Auto-Bid Shield
             </button>
 
-            {isAdmin ? (
+            {/* Admin Console & Security Vault - STRICTLY WHEN USER IS LOGGED IN */}
+            {user && (isAdmin || user.role === 'admin') && (
               <>
                 <button
                   onClick={() => setActiveTab('admin')}
@@ -251,14 +280,6 @@ function MainApp() {
                   Security Vault
                 </button>
               </>
-            ) : (
-              <button
-                onClick={() => setActiveTab('admin')}
-                className="text-slate-400 hover:text-slate-600 text-[11px] transition-colors"
-                title="Staff Portal (Master PIN required)"
-              >
-                Staff Access
-              </button>
             )}
 
             {user ? (

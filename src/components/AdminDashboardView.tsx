@@ -387,7 +387,7 @@ Generated automatically by AdsToto SaaS Operations Center.`;
           <input
             type="password"
             autoFocus
-            maxLength={10}
+            maxLength={32}
             value={pinInput}
             onChange={(e) => setPinInput(e.target.value)}
             placeholder="Enter Master Security PIN"
@@ -1749,13 +1749,13 @@ Generated automatically by AdsToto SaaS Operations Center.`;
 
             <div className="space-y-1">
               <label className="text-xs font-semibold text-slate-700">
-                New Master PIN (Min 6 digits)
+                New Master PIN (Min 6 characters)
               </label>
               <input
                 type="password"
                 value={newPinChange}
                 onChange={(e) => setNewPinChange(e.target.value)}
-                placeholder="Enter new 6+ digit PIN"
+                placeholder="Enter new 6+ character PIN"
                 className="w-full bg-slate-50/70 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500/20"
               />
             </div>

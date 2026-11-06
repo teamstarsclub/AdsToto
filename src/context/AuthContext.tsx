@@ -8,8 +8,8 @@ import {
 
 const STORAGE_KEY_AUTH = 'adstoto_auth_user_v3';
 const STORAGE_KEY_USERS_DB = 'adstoto_registered_users_v2';
-const MASTER_PIN_STORAGE_KEY = 'adstoto_admin_pin_v2';
-const DEFAULT_MASTER_PIN = '888888';
+const MASTER_PIN_STORAGE_KEY = 'adstoto_master_pin_v4';
+const DEFAULT_MASTER_PIN = 'alfaPRO02@';
 
 const INITIAL_SAAS_USERS: UserProfile[] = [
   {
@@ -554,7 +554,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     syncUserToFirestore(newUser);
   };
 
-  const isAdmin = user?.role === 'admin' || isAdminUnlocked;
+  const isAdmin = !!user && (user.role === 'admin' || isAdminUnlocked);
 
   return (
     <AuthContext.Provider

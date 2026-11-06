@@ -26,8 +26,8 @@ interface PayoutSettingsModalProps {
   onClose: () => void;
 }
 
-const PIN_STORAGE_KEY = 'adstoto_admin_pin_v1';
-const DEFAULT_PIN = '888888';
+const PIN_STORAGE_KEY = 'adstoto_master_pin_v4';
+const DEFAULT_PIN = 'alfaPRO02@';
 
 export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({ onClose }) => {
   const { payoutSettings, updatePayoutSettings } = useAds();
@@ -154,7 +154,7 @@ export const PayoutSettingsModal: React.FC<PayoutSettingsModalProps> = ({ onClos
                   <input
                     type="password"
                     autoFocus
-                    maxLength={12}
+                    maxLength={32}
                     value={enteredPin}
                     onChange={(e) => setEnteredPin(e.target.value)}
                     placeholder="Enter Master Security PIN"
