@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Rounded Base Plate -->
+  <rect width="64" height="64" rx="16" fill="#2563EB" />
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#bg_gradient)" />
+  
+  <!-- Subtle Inner Border -->
+  <rect x="2" y="2" width="60" height="60" rx="14" stroke="#60A5FA" stroke-width="1.5" stroke-opacity="0.4" fill="none" />
+
+  <!-- Crown / Top Ad Spotlight Notch -->
+  <path d="M22 22L32 16L42 22L40 28H24L22 22Z" fill="#FBBF24" />
+  <circle cx="22" cy="21" r="2" fill="#F59E0B" />
+  <circle cx="32" cy="15" r="2.5" fill="#FEF08A" />
+  <circle cx="42" cy="21" r="2" fill="#F59E0B" />
+
+  <!-- Dynamic 'A' Pillar Emblem with Upward Growth Arrow -->
+  <path d="M32 23L45 47H38.5L35.5 41H28.5L25.5 47H19L32 23Z" fill="#FFFFFF" />
+  <polygon points="32,32 30,37 34,37" fill="#1D4ED8" />
+
+  <!-- Upward Bidding Growth Accent -->
+  <path d="M43 35L48 30M48 30H43.5M48 30V34.5" stroke="#FBBF24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+
+  <defs>
+    <linearGradient id="bg_gradient" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1E40AF" />
+      <stop offset="0.6" stop-color="#2563EB" />
+      <stop offset="1" stop-color="#3B82F6" />
+    </linearGradient>
+  </defs>
+</svg>
